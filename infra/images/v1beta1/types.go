@@ -37,7 +37,7 @@ var (
 	// ImageImportConsumedFlagAnnotation is the annotation set in an ImageImport object
 	// whenever the temporary ImageImport object has already been consumed and is not
 	// needed anymore.
-	ImageImportConsumedFlagAnnotation = "shipwright.io/imageimport/consumed"
+	ImageImportConsumedFlagAnnotation = "images.shipwright.io/consumed"
 	// ConditionTypeImported is a condition we report in ImageImport objects, presenting the
 	// current Import status back to the user.
 	ConditionTypeImported = "Imported"
@@ -63,8 +63,27 @@ type Image struct {
 	Status ImageStatus `json:"status,omitempty"`
 }
 
+// filterNewestJobs remove ImageImport records that pre-dates our last imported date/time.
+func (t *Image) filterNewestJobs(imps []ImageImport) []ImageImport {
+	if len(t.Status.HashReferences) == 0 {
+		return imps
+	}
+
+	var filtered []ImageImport
+	lastimport := t.Status.HashReferences[0].ImportedAt.Time
+	for _, imp := range imps {
+		importtime := imp.Status.HashReference.ImportedAt.Time
+		if lastimport.After(importtime) || lastimport.Equal(importtime) {
+			continue
+		}
+		filtered = append(filtered, imp)
+	}
+	return filtered
+}
+
 // PrependFinishedImports calls PrependFinishedImport for each ImageImport in the slice.
 func (t *Image) PrependFinishedImports(imps []ImageImport) {
+	imps = t.filterNewestJobs(imps)
 	for _, imp := range imps {
 		t.PrependFinishedImport(imp)
 	}

@@ -64,9 +64,9 @@ func NewImage(
 	}
 }
 
-// RecentlyFinishedImports return all ImageImport objects that refer to provided Image and have
-// been processed since the last import found in provided Image.Status.HashReferences. They are
-// returned in a sorted (from oldest to newest) slice.
+// RecentlyFinishedImports return all processed ImageImport objects that refer to provided Image
+// and have not being yet marked as already consumed. They are returned in a sorted (from oldest
+// to newest) slice.
 func (t *Image) RecentlyFinishedImports(
 	ctx context.Context, img *imgv1b1.Image,
 ) ([]imgv1b1.ImageImport, error) {
@@ -79,16 +79,6 @@ func (t *Image) RecentlyFinishedImports(
 	for _, imp := range imports {
 		if !imp.AlreadyImported() || !imp.OwnedByImage(img) || imp.FlaggedAsConsumed() {
 			continue
-		}
-
-		// do not return anything that has already been catalogued in the Image status
-		// references.
-		if len(img.Status.HashReferences) > 0 {
-			lastimport := img.Status.HashReferences[0].ImportedAt.Time
-			importtime := imp.Status.HashReference.ImportedAt.Time
-			if lastimport.After(importtime) || lastimport.Equal(importtime) {
-				continue
-			}
 		}
 
 		impptr := imp.DeepCopy()
@@ -114,12 +104,12 @@ func (t *Image) RecentlyFinishedImports(
 func (t *Image) Sync(ctx context.Context, img *imgv1b1.Image) error {
 	var err error
 
-	newimports, err := t.RecentlyFinishedImports(ctx, img)
+	imports, err := t.RecentlyFinishedImports(ctx, img)
 	if err != nil {
 		return fmt.Errorf("unable to read image imports: %w", err)
 	}
 
-	img.PrependFinishedImports(newimports)
+	img.PrependFinishedImports(imports)
 
 	if _, err = t.imgcli.ShipwrightV1beta1().Images(img.Namespace).UpdateStatus(
 		ctx, img, metav1.UpdateOptions{},
@@ -130,7 +120,7 @@ func (t *Image) Sync(ctx context.Context, img *imgv1b1.Image) error {
 	// Now that we have successfully saved the ImageImports inside the Image object we
 	// can flag them for deletion. We ignore any errors here, the flagging process will
 	// be retried during next Sync call.
-	for _, imp := range newimports {
+	for _, imp := range imports {
 		imp.FlagAsConsumed()
 		if _, err := t.imgcli.ShipwrightV1beta1().ImageImports(img.Namespace).Update(
 			ctx, &imp, metav1.UpdateOptions{},
