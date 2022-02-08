@@ -1,0 +1,12 @@
+Pulls an image from a remote imgctrl instance
+
+This command requests a remote imgctrl instance to forward us a certain image.
+Shipwright image operator creates a blob with the image and, on receiving, we
+copy it's content into local storage.
+
+This subcommand communicates directly with a imgctrl instance through GRPC.
+Once imgctrl is exposed you can pull images using imgctrl address as a registry
+name.
+
+In order to pull images from a Kubernetes cluster you need to be authenticated
+using a token.

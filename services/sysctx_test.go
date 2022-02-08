@@ -1,0 +1,206 @@
+// Copyright 2020 The Shipwright Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package services
+
+import (
+	"context"
+	"encoding/json"
+	"strings"
+	"testing"
+	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	coreinf "k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/cache"
+
+	"github.com/containers/image/v5/docker"
+	"github.com/containers/image/v5/docker/reference"
+	"github.com/containers/image/v5/types"
+)
+
+func Test_authsFor(t *testing.T) {
+	auths, _ := json.Marshal(
+		dockerAuthConfig{
+			Auths: map[string]types.DockerAuthConfig{
+				"docker.io": {
+					Username: "user",
+					Password: "pass",
+				},
+				"quay.io": {
+					Username: "another-user",
+					Password: "another-pass",
+				},
+			},
+		},
+	)
+
+	for _, tt := range []struct {
+		name       string
+		image      string
+		err        string
+		authsCount int
+		objects    []runtime.Object
+	}{
+		{
+			name:  "no auths",
+			image: "centos:latest",
+		},
+		{
+			name:  "secret without type present on namespace",
+			image: "centos:latest",
+			objects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "default",
+						Name:      "a secret",
+					},
+				},
+			},
+		},
+		{
+			name:  "secret with right type but no 'data' map entry",
+			image: "centos:latest",
+			objects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "default",
+						Name:      "secret",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{},
+				},
+			},
+		},
+		{
+			name:  "secret right type but with invalid auth configuration",
+			image: "centos:latest",
+			objects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "default",
+						Name:      "secret",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: []byte("MTIz"),
+					},
+				},
+			},
+		},
+		{
+			name:       "happy path with one auth present for docker.io",
+			image:      "centos:latest",
+			authsCount: 1,
+			objects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "default",
+						Name:      "secret",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: auths,
+					},
+				},
+			},
+		},
+		{
+			name:       "happy path with multiple auths for docker.io",
+			image:      "centos:latest",
+			authsCount: 2,
+			objects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "default",
+						Name:      "secret",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: auths,
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "default",
+						Name:      "another-secret",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: auths,
+					},
+				},
+			},
+		},
+		{
+			name:       "no auth present for specific registry",
+			image:      "192.168.10.1/repo/image:latest",
+			authsCount: 0,
+			objects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "default",
+						Name:      "secret",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: auths,
+					},
+				},
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			fakecli := fake.NewSimpleClientset(tt.objects...)
+			informer := coreinf.NewSharedInformerFactory(fakecli, time.Minute)
+
+			sysctx := NewSysContext(informer)
+
+			informer.Start(ctx.Done())
+			if !cache.WaitForCacheSync(
+				ctx.Done(),
+				informer.Core().V1().Secrets().Informer().HasSynced,
+				informer.Core().V1().ConfigMaps().Informer().HasSynced,
+			) {
+				t.Fatal("errors waiting for caches to sync")
+			}
+
+			ref, _ := reference.ParseDockerRef(tt.image)
+			imgref, _ := docker.NewReference(ref)
+
+			auths, err := sysctx.authsFor(ctx, imgref, "default")
+			if err != nil {
+				if len(tt.err) == 0 {
+					t.Errorf("unexpected error %s", err)
+					return
+				}
+				if !strings.Contains(err.Error(), tt.err) {
+					t.Errorf("invalid error %s", err.Error())
+				}
+			} else if len(tt.err) > 0 {
+				t.Errorf("expecting error %s, nil received instead", tt.err)
+			}
+
+			if len(auths) != tt.authsCount {
+				t.Errorf("expecting %d, %d received", tt.authsCount, len(auths))
+			}
+		})
+	}
+}

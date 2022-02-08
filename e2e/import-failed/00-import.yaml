@@ -1,0 +1,8 @@
+apiVersion: shipwright.io/v1beta1
+kind: ImageImport
+metadata:
+  name: invalid
+spec:
+  targetImage: invalid
+  from: a.b.c.d/test/123:latest
+  mirror: false

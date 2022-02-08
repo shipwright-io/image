@@ -1,0 +1,8 @@
+apiVersion: shipwright.io/v1beta1
+kind: ImageImport
+metadata:
+  name: my-image-0
+spec:
+  targetImage: my-image
+  from: quay.io/centos/centos:latest
+  mirror: false

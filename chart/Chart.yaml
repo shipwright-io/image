@@ -1,0 +1,6 @@
+apiVersion: v2
+name: imgctrl
+description: A Helm chart for Shipwright Image API operator.
+type: application
+version: v0.0.0
+appVersion: v0.0.0

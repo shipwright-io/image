@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: imgctrl
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: imgctrl
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: imgctrl
+  template:
+    metadata:
+      labels:
+        app: imgctrl
+    spec:
+      serviceAccountName: imgctrl
+      containers:
+      - name: imgctrl
+        image: {{ .Values.image }}
+        imagePullPolicy: Always
+        command:
+          - /usr/local/bin/imgctrl
+        volumeMounts:
+          - mountPath: "/tmp/k8s-webhook-server/serving-certs"
+            name: certs
+            readOnly: true
+        ports:
+        - containerPort: 8080
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+      volumes:
+      - name: certs
+        secret:
+          secretName: certs
