@@ -280,7 +280,7 @@ by running the following commands:
 
 ```
 $ RELEASE=v2.1.17
-$ BASEURL=https://github.com/shipwright/image/releases/download
+$ BASEURL=https://github.com/shipwright-io/image/releases/download
 ```
 The `RELEASE` variable may be set to any release, to see a full list of releases follow the link
 https://github.com/shipwright/image/releases. Once the release is chosen and the variables are set
