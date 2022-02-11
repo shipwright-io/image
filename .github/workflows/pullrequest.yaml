@@ -27,6 +27,21 @@ jobs:
     - name: run linter
       run: golint -set_exit_status ./cmd/kubectl-image ./cmd/imgctrl ./controllers/... ./services/...
 
+  staticcheck:
+    name: lint
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/tagger/actions-image:latest
+    steps:
+    - name: check out code
+      uses: actions/checkout@v2
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
+
+    - name: run staticcheck
+      run: staticcheck ./...
+
   unit:
     name: unit
     runs-on: ubuntu-latest
@@ -47,6 +62,7 @@ jobs:
     needs:
       - lint
       - unit
+      - staticcheck
     runs-on: ubuntu-latest
     container:
       image: quay.io/tagger/actions-image:latest
@@ -65,6 +81,7 @@ jobs:
     needs:
       - lint
       - unit
+      - staticcheck
     runs-on: ubuntu-latest
     steps:
     - name: check out code
