@@ -139,10 +139,10 @@ jobs:
       with:
         version: v0.11.1
 
-    - name: create imgctrl namespace
+    - name: create shipwright namespace
       run: |-
-        kubectl create namespace imgctrl 
-        kubectl config set-context --current --namespace=imctrl
+        kubectl create namespace shipwright
+        kubectl config set-context --current --namespace=shipwright
 
     - name: install helm chart
       run: helm install imgctrl ./downloaded-chart
