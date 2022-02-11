@@ -28,7 +28,7 @@ jobs:
       run: golint -set_exit_status ./cmd/kubectl-image ./cmd/imgctrl ./controllers/... ./services/...
 
   staticcheck:
-    name: lint
+    name: staticcheck
     runs-on: ubuntu-latest
     container:
       image: quay.io/tagger/actions-image:latest
