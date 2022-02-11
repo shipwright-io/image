@@ -13,7 +13,7 @@ OUTPUT_DOC = $(OUTPUT_DIR)/doc
 IMGCTRL_BIN = $(OUTPUT_BIN)/$(IMGCTRL)
 PLUGIN_BIN = $(OUTPUT_BIN)/$(PLUGIN)
 GEN_BIN = $(OUTPUT_DIR)/code-generator
-KUTTL_BIN = $(OUTPUT_DIR)/kuttl
+KUTTL_BIN = $(OUTPUT_DIR)/bin/kuttl
 KUTTL_REPO = https://github.com/kudobuilder/kuttl
 
 PROJECT = github.com/shipwright-io/image
@@ -56,14 +56,14 @@ get-code-generator:
 .PHONY: get-kuttl
 get-kuttl:
 	rm -rf $(KUTTL_BIN) || true
-	mkdir -p $(OUTPUT_DIR) || true
+	mkdir -p $(OUTPUT_BIN) || true
 	curl -o $(KUTTL_BIN) -L \
 		$(KUTTL_REPO)/releases/download/v0.11.1/kubectl-kuttl_0.11.1_linux_x86_64
 	chmod 755 $(KUTTL_BIN)
 
 .PHONY: e2e
 e2e:
-	$(KUTTL_BIN) test e2e
+	$(KUTTL_BIN) test --timeout=180 e2e
 
 .PHONY: generate-proto
 generate-proto:
