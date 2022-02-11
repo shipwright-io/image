@@ -24,6 +24,7 @@ import (
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/shipwright-io/image/infra/fs"
 )
@@ -36,11 +37,11 @@ type CleanFn func()
 // registry one needs to call Load, to push it to a local tar file a Save call should be made,
 // this strange naming is an attempt to make it similar to the 'docker save/load' commands.
 type Registry struct {
-	fs         *fs.FS
-	regaddr    string
-	repository string
-	polctx     *signature.PolicyContext
-	regctx     *types.SystemContext
+	fs       *fs.FS
+	regaddr  string
+	insecure bool
+	auths    []*types.DockerAuthConfig
+	polctx   *signature.PolicyContext
 }
 
 // NewRegistry creates an entity capable of load objects to or save objects from a backend
@@ -50,23 +51,23 @@ type Registry struct {
 // lists).
 func NewRegistry(
 	regaddr string,
-	repository string,
-	sysctx *types.SystemContext,
+	auths []*types.DockerAuthConfig,
+	insecure bool,
 	polctx *signature.PolicyContext,
 ) *Registry {
 	return &Registry{
-		fs:         fs.New(),
-		regaddr:    regaddr,
-		polctx:     polctx,
-		regctx:     sysctx,
-		repository: repository,
+		fs:       fs.New(),
+		regaddr:  regaddr,
+		auths:    auths,
+		insecure: insecure,
+		polctx:   polctx,
 	}
 }
 
 // Load pushes an image reference into the backend registry. Uses srcctx (types.SystemContext)
-// when reading image from srcref, so when copying from one remote registry into our mirror
-// registry srcctx must contain all needed authentication information. Images may be stored in
-// mirror.registry.io/namespace/name or mirror.registry.io/repository/namespace-name.
+// when reading image from srcref, so when copying from one remote registry into our backend
+// registry srcctx must contain all needed authentication information. Images are stored in
+// backend.registry.io/namespace/name url.
 func (i *Registry) Load(
 	ctx context.Context,
 	srcref types.ImageReference,
@@ -74,69 +75,103 @@ func (i *Registry) Load(
 	ns string,
 	name string,
 ) (types.ImageReference, error) {
-
 	tostr := fmt.Sprintf("docker://%s/%s/%s", i.regaddr, ns, name)
-	if len(i.repository) > 0 {
-		tostr = fmt.Sprintf("docker://%s/%s/%s-%s", i.regaddr, i.repository, ns, name)
-	}
-
 	toref, err := alltransports.ParseImageName(tostr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid destination reference: %w", err)
 	}
 
-	manblob, err := imgcopy.Image(
-		ctx, i.polctx, toref, srcref, &imgcopy.Options{
-			ImageListSelection: imgcopy.CopyAllImages,
-			SourceCtx:          srcctx,
-			DestinationCtx:     i.regctx,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load image: %w", err)
+	insecure := types.OptionalBoolFalse
+	if i.insecure {
+		insecure = types.OptionalBoolTrue
 	}
 
-	dgst, err := manifest.Digest(manblob)
-	if err != nil {
-		return nil, fmt.Errorf("error calculating manifest digest: %w", err)
+	var errors *multierror.Error
+	for _, auth := range i.registryAuths() {
+		manblob, err := imgcopy.Image(
+			ctx, i.polctx, toref, srcref, &imgcopy.Options{
+				ImageListSelection: imgcopy.CopyAllImages,
+				SourceCtx:          srcctx,
+				DestinationCtx: &types.SystemContext{
+					DockerInsecureSkipTLSVerify: insecure,
+					DockerAuthConfig:            auth,
+				},
+			},
+		)
+		if err != nil {
+			errors = multierror.Append(errors, err)
+			continue
+		}
+
+		dgst, err := manifest.Digest(manblob)
+		if err != nil {
+			return nil, fmt.Errorf("error calculating manifest digest: %w", err)
+		}
+
+		refstr := fmt.Sprintf("docker://%s@%s", toref.DockerReference().Name(), dgst)
+		return alltransports.ParseImageName(refstr)
 	}
 
-	refstr := fmt.Sprintf("docker://%s@%s", toref.DockerReference().Name(), dgst)
-	return alltransports.ParseImageName(refstr)
+	return nil, fmt.Errorf("unable to load image: %w", errors)
 }
 
-// Save pulls an image from our mirror registry, stores it in a temporary
-// tar file on disk.  Returns an ImageReference pointing to the local tar
-// file and a function the caller needs to call in order to clean up after
-// our mess (properly close tar file and delete it from disk). Returned ref
-// points to a 'docker-archive' tar file.
+// registryAuths returns a list of auths to be used when attempting to connect to the backend
+// registry. If no auth was configured for the backend registrythis function returns an slice
+// with a "nil" entry that, in containers/image/v5 library, means no auth (anonymous access).
+func (i *Registry) registryAuths() []*types.DockerAuthConfig {
+	if len(i.auths) == 0 {
+		return []*types.DockerAuthConfig{nil}
+	}
+	return i.auths
+}
+
+// Save pulls an image from our backend registry, stores it in a temporary tar file on disk.
+// Returns an ImageReference pointing to the local tar file and a function the caller needs to
+// call in order to clean up after our mess (properly close tar file and delete it from disk).
+// Returned ref points to a 'docker-archive' tar file.
 func (i *Registry) Save(
 	ctx context.Context, ref types.ImageReference,
 ) (types.ImageReference, CleanFn, error) {
 	domain := reference.Domain(ref.DockerReference())
 	if domain != i.regaddr {
-		return nil, nil, fmt.Errorf("mirror doesn't know about this image")
+		return nil, nil, fmt.Errorf("backend registry doesn't know about this image")
 	}
 
-	dstref, cleanup, err := i.NewLocalReference()
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating temp file: %w", err)
+	insecure := types.OptionalBoolFalse
+	if i.insecure {
+		insecure = types.OptionalBoolTrue
 	}
 
-	_, err = imgcopy.Image(
-		ctx, i.polctx, dstref, ref, &imgcopy.Options{
-			SourceCtx: i.regctx,
-		},
-	)
-	if err != nil {
-		cleanup()
-		return nil, nil, fmt.Errorf("unable to copy image: %w", err)
+	var err error
+	var cleanup CleanFn
+	var destref types.ImageReference
+	var errors *multierror.Error
+	for _, auth := range i.registryAuths() {
+		destref, cleanup, err = i.NewLocalReference()
+		if err != nil {
+			return nil, nil, fmt.Errorf("error creating temp file: %w", err)
+		}
+
+		if _, err := imgcopy.Image(
+			ctx, i.polctx, destref, ref, &imgcopy.Options{
+				SourceCtx: &types.SystemContext{
+					DockerInsecureSkipTLSVerify: insecure,
+					DockerAuthConfig:            auth,
+				},
+			},
+		); err != nil {
+			cleanup()
+			errors = multierror.Append(errors, err)
+			continue
+		}
+		return destref, cleanup, nil
 	}
-	return dstref, cleanup, nil
+
+	return nil, nil, fmt.Errorf("unable to save image: %w", errors)
 }
 
-// NewLocalReference returns an image reference pointing to a local tar file.
-// Also returns a clean up function that must be called to free resources.
+// NewLocalReference returns an image reference pointing to a local tar file. Also returns a
+// clean up function that must be called to free resources.
 func (i *Registry) NewLocalReference() (types.ImageReference, CleanFn, error) {
 	tfile, cleanup, err := i.fs.TempFile()
 	if err != nil {

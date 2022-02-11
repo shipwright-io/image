@@ -33,15 +33,23 @@ import (
 	"github.com/containers/image/v5/types"
 )
 
+type dockerAuthConfigJSON struct {
+	Auths map[string]types.DockerAuthConfig
+}
+
 func Test_authsFor(t *testing.T) {
 	auths, _ := json.Marshal(
-		dockerAuthConfig{
+		dockerAuthConfigJSON{
 			Auths: map[string]types.DockerAuthConfig{
 				"docker.io": {
 					Username: "user",
 					Password: "pass",
 				},
 				"quay.io": {
+					Username: "another-user",
+					Password: "another-pass",
+				},
+				"some.registry.io": {
 					Username: "another-user",
 					Password: "another-pass",
 				},
@@ -58,11 +66,11 @@ func Test_authsFor(t *testing.T) {
 	}{
 		{
 			name:  "no auths",
-			image: "centos:latest",
+			image: "some.registry.io/centos:latest",
 		},
 		{
 			name:  "secret without type present on namespace",
-			image: "centos:latest",
+			image: "some.registry.io/centos:latest",
 			objects: []runtime.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -74,7 +82,7 @@ func Test_authsFor(t *testing.T) {
 		},
 		{
 			name:  "secret with right type but no 'data' map entry",
-			image: "centos:latest",
+			image: "some.registry.io/centos:latest",
 			objects: []runtime.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -88,7 +96,8 @@ func Test_authsFor(t *testing.T) {
 		},
 		{
 			name:  "secret right type but with invalid auth configuration",
-			image: "centos:latest",
+			image: "some.registry.io/centos:latest",
+			err:   "unable to build keyring",
 			objects: []runtime.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -103,8 +112,8 @@ func Test_authsFor(t *testing.T) {
 			},
 		},
 		{
-			name:       "happy path with one auth present for docker.io",
-			image:      "centos:latest",
+			name:       "happy path with one auth present for some.registry.io",
+			image:      "some.registry.io/centos:latest",
 			authsCount: 1,
 			objects: []runtime.Object{
 				&corev1.Secret{
@@ -120,8 +129,8 @@ func Test_authsFor(t *testing.T) {
 			},
 		},
 		{
-			name:       "happy path with multiple auths for docker.io",
-			image:      "centos:latest",
+			name:       "happy path with multiple auths for some.registry.io",
+			image:      "some.registry.io/centos:latest",
 			authsCount: 2,
 			objects: []runtime.Object{
 				&corev1.Secret{

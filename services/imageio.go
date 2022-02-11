@@ -24,7 +24,6 @@ import (
 	"k8s.io/utils/pointer"
 
 	"github.com/containers/image/v5/transports/alltransports"
-	"github.com/containers/image/v5/types"
 
 	imgclient "github.com/shipwright-io/image/infra/images/v1beta1/gen/clientset/versioned"
 	imginform "github.com/shipwright-io/image/infra/images/v1beta1/gen/informers/externalversions"
@@ -75,7 +74,7 @@ func (t *ImageIO) Push(ctx context.Context, ns, name string, fpath string) error
 		metrics.PushSuccesses.Inc()
 	}()
 
-	istore, err := t.syssvc.GetRegistryStore(ctx)
+	istore, err := t.syssvc.GetRegistryStore(ctx, ns, name)
 	if err != nil {
 		return fmt.Errorf("error creating image store: %w", err)
 	}
@@ -93,15 +92,17 @@ func (t *ImageIO) Push(ctx context.Context, ns, name string, fpath string) error
 		return fmt.Errorf("error loading image into registry: %w", err)
 	}
 
-	regctx := t.syssvc.MirrorRegistryContext(ctx)
-	insecure := regctx.DockerInsecureSkipTLSVerify == types.OptionalBoolTrue
+	regcfg, err := t.syssvc.ParseShipwrightMirrorRegistryConfig()
+	if err != nil {
+		return fmt.Errorf("unable to read mirror registry config: %w", err)
+	}
 
 	opts := ImportOpts{
 		Namespace:   ns,
 		TargetImage: name,
 		From:        dstref.DockerReference().String(),
 		Mirror:      pointer.Bool(false),
-		Insecure:    pointer.Bool(insecure),
+		Insecure:    pointer.Bool(regcfg.Insecure),
 	}
 
 	impsvc := NewImageImport(nil, t.imgcli, nil)
@@ -136,7 +137,7 @@ func (t *ImageIO) Pull(ctx context.Context, ns, name string) (*os.File, func(), 
 		return nil, nil, fmt.Errorf("error getting image: %w", err)
 	}
 
-	istore, err := t.syssvc.GetRegistryStore(ctx)
+	istore, err := t.syssvc.GetRegistryStore(ctx, ns, name)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating image store: %w", err)
 	}

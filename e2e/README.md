@@ -17,4 +17,7 @@ This will install `kuttl` under `output` directory. With `kuttl` installed you c
 $ make e2e
 ```
 
-For further information on `kuttl` please refer to its [doc](https://kuttl.dev/docs/).
+For further information on `kuttl` please refer to its [doc](https://kuttl.dev/docs/). These
+tests will change the deployed Shipwright Image config so don't expect that at the end of the
+e2d you still have the same configuration. During github's CI we deploy a Kind instance and
+run these on top of that (see .github directory for further info).

@@ -18,9 +18,9 @@ steps. Both the pusher and the puller need access to the same Image Registry, ad
 Credentials are one example of the concerns. Other factors may pop up when running, for instance,
 in an air-gapped environment, where the cluster may not be ablt to reach external Registries.
 
-Shipwright Images aims to overcome these caveats by providing an image management abstraction layer.
-For instance, by providing a direct mapping between a Container Image tag (e.g., "latest") and its
-correspondent Manifest content's hash.
+Shipwright Images aims to overcome these caveats by providing an image management abstraction
+layer.  For instance, by providing a direct mapping between a Container Image tag (e.g., "latest")
+and its correspondent Manifest content's hash.
 
 When integrated with an Internal or Mirror Registry, Shipwright Images allows users to mirror
 remotely hosted images into the cluster and to push or pull Images directly without requiring an
@@ -150,11 +150,11 @@ status:
 
 On an Image `.spec` property the following fields are valid:
 
-| Property   | Description                                                                                  |
-| ---------- | -------------------------------------------------------------------------------------------- |
-| from       | Indicates the source of the image (from where Shipwright Images should import it)            |
-| mirror     | Informs if the Image should be mirrored to another registry                                  |
-| insecure   | Indicates that Shipwright Images should skip tls verification during the image import/mirror |
+| Property   | Description                                                                       |
+| ---------- | ----------------------------------------------------------------------------------|
+| from       | Indicates the source of the image (from where Shipwright Images should import it) |
+| mirror     | Informs if the Image should be mirrored to another registry                       |
+| insecure   | Skip tls verification during the image import/mirror                              |
 
 Follow below the properties found on an Image`.status` property and their meaning:
 
@@ -162,9 +162,9 @@ Follow below the properties found on an Image`.status` property and their meanin
 | ----------------- | -------------------------------------------------------------------------- |
 | hashReferences    | A list of all imported references (aka generations)                        |
 
-The property `.status.hashReferences` is an array of imports executed, Shipwright Images currently holds up to
-twenty five references for any given image. Every item on the array is composed of the following
-properties:
+The property `.status.hashReferences` is an array of imports executed, Shipwright Images currently
+holds up to twenty five references for any given image. Every item on the array is composed of the
+following properties:
 
 | Name           | Description                                                                   |
 | -------------- | ----------------------------------------------------------------------------- |
@@ -221,31 +221,23 @@ As for `.status.importAttempts` the following is valid:
 
 #### Mirroring images locally
 
-If mirroring is set in an Image Shipwright Images will mirror the image content into another
+If mirroring is set in an Image, Shipwright Images will mirror the image content into another
 registry provided by the user.  To mirror images locally one needs to inform Shipwright Images
-about the mirror registry location. There are two ways of doing so, the first one is by following
-a Kubernetes enhancement proposal laid down [here](https://bit.ly/3rxCRqH). This enhancement
-proposal still does not cover things such as authentication thus should not be used in production.
-Shipwright Images can also be informed of the mirror registry location through a Secret called
-`mirror-registry-config`, this secret may contain the following properties:
+about the mirror registry location. You can configure the mirror registry location through a
+Secret called `mirror-registry-config` in the Shipwright Images namespace, this secret may
+contain the following properties:
 
-| Name       | Description                                                                                  |
-| -----------| -------------------------------------------------------------------------------------------- |
-| address    | The mirror registry URL                                                                      |
-| username   | Username Shipwright Images should use when accessing the mirror registry                     |
-| password   | The password to be used by Shipwright Images                                                 |
-| token      | The auth token to be used by Shipwright Images (optional)                                    |
-| insecure   | Allows Shipwright Images to access insecure registry if set to "true" (string)               |
-| repository | If set Shipwright Images will mirror all images inside the same Registry repository          |
+| Name       | Description                                                                       |
+| -----------| --------------------------------------------------------------------------------- |
+| address    | The mirror registry URL                                                           |
+| insecure   | Allows Shipwright Images to access insecure registry if set to "true" (string)    |
 
-Important to notice that, by default, Shipwright Images will create one repository per namespace
-so the user has to have enough permissiosn to do such an operator (create new repositories and
-push images to them). In other words: by default images are mirrored at
-`mirror.registry.io/namespace/imagename` inside the registry.
+Credentials to access the mirror registry are read from the target namespace, in other words: if
+you want to mirror an image in the namespace "prod" you have to have valid push credentials inside
+the "prod" namespace.
 
-If your user doesn't have such permissions you can set up the `repository` property in the config,
-by doing so all images are going to be mirrored inside the provided `repository`, in other words
-images will be mirrored at `mirror.registry.io/repository/namespace-imagename`.
+You can read more on how to create a registry secret here:
+https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 
 Follow below an example of a `mirror-registry-config` Secret:
 
@@ -257,8 +249,6 @@ metadata:
   namespace: shipwright
 data:
   address: cmVnaXN0cnkuaW8=
-  username: YWRtaW4=
-  password: d2hhdCB3ZXJlIHlvdSB0aGlua2luZz8K
 ```
 
 #### Importing images from private registries
@@ -315,8 +305,8 @@ data:
   insecure: dHJ1ZQ==
 ```
 
-You can provide your own certificate and Shipwright Images will leverage it for serving images when
-users pull or push. This certificate is also used when Kubernetes asks to validate a given
+You can provide your own certificate and Shipwright Images will leverage it for serving images
+when users pull or push. This certificate is also used when Kubernetes asks to validate a given
 Tag.  To provide your certificate use Helm chart `key` and `cert` variables. Important to
 notice that the certificate must be valid for the following alternative names:
 
