@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/informers"
 	corelister "k8s.io/client-go/listers/core/v1"
@@ -146,7 +146,7 @@ func (s *SysContext) authsFor(
 		return nil, fmt.Errorf("fail to list secrets: %w", err)
 	}
 
-	var secs []v1.Secret
+	var secs []corev1.Secret
 	for _, sct := range secsref {
 		ref := sct.DeepCopy()
 		secs = append(secs, *ref)
