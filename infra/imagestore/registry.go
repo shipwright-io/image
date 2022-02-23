@@ -142,12 +142,9 @@ func (i *Registry) Save(
 		insecure = types.OptionalBoolTrue
 	}
 
-	var err error
-	var cleanup CleanFn
-	var destref types.ImageReference
 	var errors *multierror.Error
 	for _, auth := range i.registryAuths() {
-		destref, cleanup, err = i.NewLocalReference()
+		destref, cleanup, err := i.NewLocalReference()
 		if err != nil {
 			return nil, nil, fmt.Errorf("error creating temp file: %w", err)
 		}
