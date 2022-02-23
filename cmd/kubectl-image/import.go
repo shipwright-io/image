@@ -20,6 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/pointer"
 
 	"github.com/shipwright-io/image/cmd/kubectl-image/static"
 	itagcli "github.com/shipwright-io/image/infra/images/v1beta1/gen/clientset/versioned"
@@ -29,8 +30,8 @@ import (
 func init() {
 	imageimport.Flags().StringP("namespace", "n", "", "namespace to use")
 	imageimport.Flags().StringP("from", "f", "", "image source for the import")
-	imageimport.Flags().Bool("mirror", false, "mirror the image")
-	imageimport.Flags().Bool("insecure-source", false, "skip tls check for the remote registry")
+	imageimport.Flags().StringP("mirror", "m", "", "mirror the image")
+	imageimport.Flags().StringP("insecure-source", "i", "", "skip remote registry tls")
 }
 
 var imageimport = &cobra.Command{
@@ -54,14 +55,30 @@ var imageimport = &cobra.Command{
 			return err
 		}
 
-		mirror, err := c.Flags().GetBool("mirror")
+		mirror, err := c.Flags().GetString("mirror")
 		if err != nil {
 			return err
 		}
 
-		ins, err := c.Flags().GetBool("insecure-source")
+		var mirrorptr *bool
+		if mirror != "" {
+			if mirror != "true" && mirror != "false" {
+				return fmt.Errorf("--mirror must be 'true' or 'false'")
+			}
+			mirrorptr = pointer.Bool(mirror == "true")
+		}
+
+		ins, err := c.Flags().GetString("insecure-source")
 		if err != nil {
 			return err
+		}
+
+		var insptr *bool
+		if ins != "" {
+			if ins != "true" && ins != "false" {
+				return fmt.Errorf("--insecure-source must be 'true' or 'false'")
+			}
+			insptr = pointer.Bool(ins == "true")
 		}
 
 		tisvc, err := createImageImportService()
@@ -73,8 +90,8 @@ var imageimport = &cobra.Command{
 			Namespace:   ns,
 			TargetImage: args[0],
 			From:        from,
-			Mirror:      &mirror,
-			Insecure:    &ins,
+			Mirror:      mirrorptr,
+			Insecure:    insptr,
 		}
 
 		ti, err := tisvc.NewImport(ctx, opts)

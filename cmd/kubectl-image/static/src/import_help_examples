@@ -2,7 +2,7 @@
 
   kubectl image import					\
   	--from docker.io/library/fedora:latest		\
-	--mirror=false					\
+	--mirror=true					\
 	--insecure-source=false				\
 	-n devel					\
 	fedora 
