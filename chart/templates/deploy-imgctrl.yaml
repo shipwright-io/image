@@ -21,8 +21,6 @@ spec:
       - name: imgctrl
         image: {{ .Values.image }}
         imagePullPolicy: Always
-        command:
-          - /usr/local/bin/imgctrl
         volumeMounts:
           - mountPath: "/tmp/k8s-webhook-server/serving-certs"
             name: certs

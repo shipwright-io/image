@@ -3,8 +3,13 @@ PLUGIN = kubectl-image
 PLUGIN_DARWIN = kubectl-image-darwin
 
 VERSION ?= v0.0.0
+
+REGISTRY_HOSTNAME ?= ghcr.io
+REGISTRY_USERNAME ?= shipwright-io
+
 IMAGE_BUILDER ?= podman
-IMAGE ?= quay.io/shipwright/imgctrl:latest
+IMAGE_TAG ?= latest
+IMAGE ?= $(REGISTRY_HOSTNAME)/$(REGISTRY_USERNAME)/$(IMGCTRL)
 
 OUTPUT_DIR ?= output
 OUTPUT_BIN = $(OUTPUT_DIR)/bin
@@ -19,6 +24,18 @@ KUTTL_REPO = https://github.com/kudobuilder/kuttl
 PROJECT = github.com/shipwright-io/image
 GEN_OUTPUT = /tmp/$(PROJECT)/infra/images
 
+# destination namespace to install target
+NAMESPACE ?= shipwright-build
+
+# the container image produced by ko will use this repostory, and combine with the application name
+# being compiled
+KO_DOCKER_REPO ?= $(REGISTRY_HOSTNAME)/$(REGISTRY_USERNAME)
+
+# golang flags are exported through the enviroment variables, reaching all targets
+GOFLAGS ?= -v -mod=vendor -ldflags='-Xmain.Version=$(VERSION)'
+
+.EXPORT_ALL_VARIABLES:
+
 default: build
 
 build: $(IMGCTRL) $(PLUGIN_DARWIN) $(PLUGIN)
@@ -26,14 +43,12 @@ build: $(IMGCTRL) $(PLUGIN_DARWIN) $(PLUGIN)
 .PHONY: $(IMGCTRL)
 $(IMGCTRL):
 	go build \
-		-ldflags="-X 'main.Version=$(VERSION)'" \
 		-o $(IMGCTRL_BIN) \
 		./cmd/$(IMGCTRL)
 
 .PHONY: $(PLUGIN)
 $(PLUGIN):
 	go build \
-		-ldflags="-X 'main.Version=$(VERSION)'" \
 		-o $(PLUGIN_BIN) \
 		./cmd/$(PLUGIN)
 
@@ -41,7 +56,6 @@ $(PLUGIN):
 $(PLUGIN_DARWIN):
 	GOOS=darwin GOARCH=amd64 go build \
 		-tags containers_image_openpgp \
-		-ldflags="-X 'main.Version=$(VERSION)'" \
 		-o $(PLUGIN_BIN) \
 		./cmd/$(PLUGIN)
 
@@ -86,7 +100,7 @@ generate-k8s:
 
 .PHONY: image
 image:
-	VERSION=$(VERSION) $(IMAGE_BUILDER) build -f Containerfile -t $(IMAGE) .
+	$(IMAGE_BUILDER) build -f Containerfile -t $(IMAGE) .
 
 .PHONY: clean
 clean:
@@ -99,3 +113,21 @@ pdf:
 		-fmarkdown-implicit_figures \
 		-V geometry:margin=1in \
 		-o $(OUTPUT_DOC)/README.pdf
+
+# using the environment variable directly to login against the container registry, while the username
+# and container registry hostname are regular Makefile variables, please, overwrite them as needed.
+registry-login:
+	echo "$$GITHUB_TOKEN" | \
+		ko login "$(REGISTRY_HOSTNAME)" --username=$(REGISTRY_USERNAME) --password-stdin
+
+# build and push the container image with ko.
+build-image:
+	ko publish --base-import-paths --tags="${IMAGE_TAG}" ./cmd/$(IMGCTRL) 
+
+# installs the helm rendered resources against the infomred namespace. 
+install:
+	helm template \
+		--namespace="$(NAMESPACE)" \
+		--set="image=ko://github.com/shipwright-io/image/cmd/imgctrl" \
+		./chart | \
+			ko apply --base-import-paths --filename -

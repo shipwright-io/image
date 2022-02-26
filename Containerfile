@@ -27,3 +27,5 @@ COPY --from=builder /src/output/bin/kubectl-image /usr/local/bin/kubectl-image
 # 8083 images export/import handler.
 # 8090 metrics endpoint.
 EXPOSE 8080 8083 8090
+
+ENTRYPOINT [ "/usr/local/bin/imgctrl" ]

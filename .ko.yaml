@@ -1,0 +1,7 @@
+---
+builds:
+  - id: imgctrl
+    main: ./cmd/imgctrl
+    flags:
+      - -tags
+      - containers_image_openpgp
