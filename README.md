@@ -54,7 +54,7 @@ Users can observe the mirror process by inspected the created ImageImport object
 
 ```
 $ kubectl get imageimports.shipwright.io
-NAME         INSECURE   MIRROR   TARGETIMAGE   IMPORTEDAT             IMAGEREFERENCE
+NAME         INSECURE   MIRROR   IMAGE         IMPORTEDAT             IMAGEREFERENCE
 operator-0   false      true     operator      2022-02-06T19:06:24Z   mirror.registry/ns/name@sha
 ```
 
@@ -185,7 +185,7 @@ spec:
   from: docker.io/library/nginx:latest
   insecure: false
   mirror: false
-  targetImage: nginx
+  image: nginx
 status:
   hashReference:
     from: docker.io/library/nginx:latest
@@ -196,9 +196,9 @@ status:
     when: "2022-02-06T20:37:46Z"
 ```
 
-The field `.spec.targetImage` is mandatory. All other `.spec` fields are optional and if not
-provided their values are inherited from the Image pointed by `.spec.targetImage`. The status
-of an ImageImport CR shows the result of all attempts made to import the image under the field
+The field `.spec.image` is mandatory. All other `.spec` fields are optional and if not provided
+their values are inherited from the Image pointed by `.spec.image`. The status of an ImageImport
+CR shows the result of all attempts made to import the image under the field
 `.status.importAttempts`. Ten attempts are made to import an Image.
 
 In case of success during the import the `.status.hashReference` contains the image reference,

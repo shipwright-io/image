@@ -26,8 +26,8 @@ spec:
       name: mirror
       type: boolean
     - description: Target Image
-      jsonPath: .spec.targetImage
-      name: targetImage
+      jsonPath: .spec.image
+      name: image
       type: string
     - description: Imported At
       jsonPath: .status.hashReference.importedAt
@@ -46,7 +46,7 @@ spec:
           spec:
             type: object
             properties:
-              targetImage:
+              image:
                 type: string
               from:
                 type: string

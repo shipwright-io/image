@@ -3,6 +3,6 @@ kind: ImageImport
 metadata:
   name: alpine-mirror
 spec:
-  targetImage: alpine-mirror
+  image: alpine-mirror
   from: docker.io/library/alpine:latest
   mirror: true

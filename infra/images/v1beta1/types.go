@@ -258,8 +258,8 @@ func (t *ImageImport) SetOwnerImage(img *Image) {
 
 // Validate checks ImageImport contain all mandatory fields.
 func (t *ImageImport) Validate() error {
-	if t.Spec.TargetImage == "" {
-		return fmt.Errorf("empty spec.targetImage")
+	if t.Spec.Image == "" {
+		return fmt.Errorf("empty spec.image")
 	}
 	return nil
 }
@@ -269,8 +269,8 @@ func (t *ImageImport) Validate() error {
 // ImageImport object we read it from the provided Image object. This function guarantees
 // that there will be no nil pointers in the ImageImport spec property.
 func (t *ImageImport) InheritValuesFrom(it *Image) {
-	if t.Spec.TargetImage == "" {
-		t.Spec.TargetImage = it.Name
+	if t.Spec.Image == "" {
+		t.Spec.Image = it.Name
 	}
 
 	if t.Spec.From == "" {
@@ -367,13 +367,13 @@ func (t *ImageImport) RegisterImportSuccess() {
 }
 
 // ImageImportSpec represents the body of the request to import a given container image tag from
-// a remote location. Values not set in here are read from the TargetImage, e.g.  if no "mirror"
-// is set here but it is set in the targetImage we use it.
+// a remote location. Values not set in here are read from the Image, e.g.  if no "mirror" is set
+// here but it is set in the image we use it.
 type ImageImportSpec struct {
-	TargetImage string `json:"targetImage"`
-	From        string `json:"from"`
-	Mirror      *bool  `json:"mirror,omitempty"`
-	Insecure    *bool  `json:"insecure,omitempty"`
+	Image    string `json:"image"`
+	From     string `json:"from"`
+	Mirror   *bool  `json:"mirror,omitempty"`
+	Insecure *bool  `json:"insecure,omitempty"`
 }
 
 // ImageImportStatus holds the current status for an image tag import attempt.
