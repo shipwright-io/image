@@ -162,7 +162,7 @@ func (t *Image) AddEventHandler(handler cache.ResourceEventHandler) {
 type NewImageOpts struct {
 	Namespace string
 	Name      string
-	From      string
+	Source    string
 	Mirror    bool
 	Insecure  bool
 }
@@ -174,7 +174,7 @@ func (t *Image) NewImage(ctx context.Context, o NewImageOpts) (*imgv1b1.Image, e
 			Name: o.Name,
 		},
 		Spec: imgv1b1.ImageSpec{
-			From:     o.From,
+			Source:   o.Source,
 			Mirror:   o.Mirror,
 			Insecure: o.Insecure,
 		},

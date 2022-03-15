@@ -3,9 +3,9 @@ kind: Image
 metadata:
   name: alpine-mirror
 spec:
-  from: docker.io/library/alpine:latest
+  source: docker.io/library/alpine:latest
   mirror: true
   insecure: false
 status:
   hashReferences:
-  - from: docker.io/library/alpine:latest
+  - source: docker.io/library/alpine:latest

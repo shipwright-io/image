@@ -99,11 +99,11 @@ func (t *Image) PrependFinishedImport(imp ImageImport) {
 	href := *imp.Status.HashReference
 
 	// we do not prepend if the most recent import has the same image reference.  in this
-	// scenario we only update From and ImportedAt to reflect this newly triggered import.
+	// scenario we only update Source and ImportedAt to reflect this newly triggered import.
 	if len(t.Status.HashReferences) > 0 {
 		lref := t.Status.HashReferences[0]
 		if href.ImageReference == lref.ImageReference {
-			lref.From = href.From
+			lref.Source = href.Source
 			lref.ImportedAt = href.ImportedAt
 			t.Status.HashReferences[0] = lref
 			return
@@ -120,8 +120,8 @@ func (t *Image) PrependFinishedImport(imp ImageImport) {
 
 // Validate checks Image contain all mandatory fields.
 func (t *Image) Validate() error {
-	if t.Spec.From == "" {
-		return fmt.Errorf("empty spec.from")
+	if t.Spec.Source == "" {
+		return fmt.Errorf("empty spec.source")
 	}
 	return nil
 }
@@ -172,7 +172,7 @@ func (t *Image) CurrentReferenceForImage() string {
 
 // ImageSpec represents the user intention with regards to importing remote images.
 type ImageSpec struct {
-	From     string `json:"from"`
+	Source   string `json:"source"`
 	Mirror   bool   `json:"mirror"`
 	Insecure bool   `json:"insecure"`
 }
@@ -192,7 +192,7 @@ type ImportAttempt struct {
 
 // HashReference is an reference to an imported Image (by its sha).
 type HashReference struct {
-	From           string      `json:"from"`
+	Source         string      `json:"source"`
 	ImportedAt     metav1.Time `json:"importedAt"`
 	ImageReference string      `json:"imageReference,omitempty"`
 }
@@ -265,7 +265,7 @@ func (t *ImageImport) Validate() error {
 }
 
 // InheritValuesFrom uses provided Image to set default values for required propertis in a
-// ImageImport before processing it. For example if no "From" has been specified in the
+// ImageImport before processing it. For example if no "Source" has been specified in the
 // ImageImport object we read it from the provided Image object. This function guarantees
 // that there will be no nil pointers in the ImageImport spec property.
 func (t *ImageImport) InheritValuesFrom(it *Image) {
@@ -273,8 +273,8 @@ func (t *ImageImport) InheritValuesFrom(it *Image) {
 		t.Spec.Image = it.Name
 	}
 
-	if t.Spec.From == "" {
-		t.Spec.From = it.Spec.From
+	if t.Spec.Source == "" {
+		t.Spec.Source = it.Spec.Source
 	}
 
 	if t.Spec.Insecure == nil {
@@ -371,7 +371,7 @@ func (t *ImageImport) RegisterImportSuccess() {
 // here but it is set in the image we use it.
 type ImageImportSpec struct {
 	Image    string `json:"image"`
-	From     string `json:"from"`
+	Source   string `json:"source"`
 	Mirror   *bool  `json:"mirror,omitempty"`
 	Insecure *bool  `json:"insecure,omitempty"`
 }

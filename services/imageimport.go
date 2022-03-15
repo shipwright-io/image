@@ -78,7 +78,7 @@ func NewImageImport(
 type ImportOpts struct {
 	Namespace string
 	Image     string
-	From      string
+	Source    string
 	Mirror    *bool
 	Insecure  *bool
 }
@@ -96,7 +96,7 @@ func (t *ImageImport) NewImport(ctx context.Context, o ImportOpts) (*imgv1b1.Ima
 		},
 		Spec: imgv1b1.ImageImportSpec{
 			Image:    o.Image,
-			From:     o.From,
+			Source:   o.Source,
 			Mirror:   o.Mirror,
 			Insecure: o.Insecure,
 		},
@@ -116,7 +116,7 @@ func (t *ImageImport) NewImageFor(
 	opts := NewImageOpts{
 		Namespace: ii.Namespace,
 		Name:      ii.Spec.Image,
-		From:      ii.Spec.From,
+		Source:    ii.Spec.Source,
 		Mirror:    pointer.BoolDeref(ii.Spec.Mirror, false),
 		Insecure:  pointer.BoolDeref(ii.Spec.Insecure, false),
 	}
@@ -222,7 +222,7 @@ func (t *ImageImport) Sync(ctx context.Context, ii *imgv1b1.ImageImport) error {
 	// make sure we inherited values from the target Image object. This essentially means
 	// that we must have no nil pointers in the ImageImport object.
 	ii.InheritValuesFrom(img)
-	if ii.Spec.From == "" {
+	if ii.Spec.Source == "" {
 		return fmt.Errorf("unable to determine image source registry")
 	}
 
@@ -259,7 +259,7 @@ func (t *ImageImport) Sync(ctx context.Context, ii *imgv1b1.ImageImport) error {
 func (t *ImageImport) Import(
 	ctx context.Context, ii *imgv1b1.ImageImport,
 ) (*imgv1b1.HashReference, error) {
-	domain, remainder := t.splitRegistryDomain(ii.Spec.From)
+	domain, remainder := t.splitRegistryDomain(ii.Spec.Source)
 
 	registries, err := t.syssvc.RegistriesToSearch(ctx, domain)
 	if err != nil {
@@ -306,7 +306,7 @@ func (t *ImageImport) Import(
 		}
 
 		return &imgv1b1.HashReference{
-			From:           ii.Spec.From,
+			Source:         ii.Spec.Source,
 			ImportedAt:     metav1.NewTime(time.Now()),
 			ImageReference: imghash.DockerReference().String(),
 		}, nil
@@ -344,7 +344,7 @@ func (t *ImageImport) Get(ctx context.Context, ns, name string) (*imgv1b1.ImageI
 }
 
 // Validate checks if provided ImageImport contain all mandatory fields. If ImageImport does
-// contains an empty "spec.from" we attempt to load the image.
+// contains an empty "spec.source" we attempt to load the image.
 func (t *ImageImport) Validate(ctx context.Context, imp *imgv1b1.ImageImport) error {
 	if err := imp.Validate(); err != nil {
 		return err
@@ -353,8 +353,8 @@ func (t *ImageImport) Validate(ctx context.Context, imp *imgv1b1.ImageImport) er
 	if _, err := t.imglis.Images(imp.Namespace).Get(imp.Spec.Image); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
-		} else if imp.Spec.From == "" {
-			return fmt.Errorf("empty spec.from")
+		} else if imp.Spec.Source == "" {
+			return fmt.Errorf("empty spec.source")
 		}
 	}
 	return nil
@@ -392,12 +392,12 @@ func (t *ImageImport) HashReferenceByImage(
 
 // getImageHash attempts to fetch image hash remotely using provided system context. Hash is
 // full image path with its hash, something like reg.io/repo/img@sha256:... The ideia here is
-// that the "from" reference points to a image by tag, something like reg.io/repo/img:latest
+// that the "source" reference points to a image by tag, something like reg.io/repo/img:latest
 // and we return a reference by hash (something like reg.io/repo/img@sha256:...).
 func (t *ImageImport) getImageHash(
-	ctx context.Context, from types.ImageReference, sysctx *types.SystemContext,
+	ctx context.Context, source types.ImageReference, sysctx *types.SystemContext,
 ) (types.ImageReference, error) {
-	img, err := from.NewImage(ctx, sysctx)
+	img, err := source.NewImage(ctx, sysctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create image closer: %w", err)
 	}
@@ -413,7 +413,7 @@ func (t *ImageImport) getImageHash(
 		return nil, fmt.Errorf("error calculating manifest digest: %w", err)
 	}
 
-	refstr := fmt.Sprintf("docker://%s@%s", from.DockerReference().Name(), dgst)
+	refstr := fmt.Sprintf("docker://%s@%s", source.DockerReference().Name(), dgst)
 	hashref, err := alltransports.ParseImageName(refstr)
 	if err != nil {
 		return nil, err

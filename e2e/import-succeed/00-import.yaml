@@ -4,5 +4,5 @@ metadata:
   name: my-image-0
 spec:
   image: my-image
-  from: quay.io/centos/centos:latest
+  source: quay.io/centos/centos:latest
   mirror: false

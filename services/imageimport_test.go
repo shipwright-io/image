@@ -126,8 +126,8 @@ func TestImageImportSync(t *testing.T) {
 					Name:      "new-img",
 				},
 				Spec: imgv1b1.ImageImportSpec{
-					Image: "new-img",
-					From:  "centos:latest",
+					Image:  "new-img",
+					Source: "centos:latest",
 				},
 			},
 			imgObjects: []runtime.Object{
@@ -137,8 +137,8 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "new-img",
 					},
 					Spec: imgv1b1.ImageImportSpec{
-						Image: "new-img",
-						From:  "centos:latest",
+						Image:  "new-img",
+						Source: "centos:latest",
 					},
 				},
 				&imgv1b1.Image{
@@ -147,7 +147,7 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "new-img",
 					},
 					Spec: imgv1b1.ImageSpec{
-						From: "centos:latest",
+						Source: "centos:latest",
 					},
 				},
 			},
@@ -180,7 +180,7 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "new-img",
 					},
 					Spec: imgv1b1.ImageSpec{
-						From: "centos:latest",
+						Source: "centos:latest",
 					},
 				},
 			},
@@ -195,8 +195,8 @@ func TestImageImportSync(t *testing.T) {
 					Name:      "new-img",
 				},
 				Spec: imgv1b1.ImageImportSpec{
-					Image: "new-img",
-					From:  "does.not.exist/test/test123:latest",
+					Image:  "new-img",
+					Source: "does.not.exist/test/test123:latest",
 				},
 			},
 			imgObjects: []runtime.Object{
@@ -206,8 +206,8 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "new-img",
 					},
 					Spec: imgv1b1.ImageImportSpec{
-						Image: "new-img",
-						From:  "does.not.exist/test/test123:latest",
+						Image:  "new-img",
+						Source: "does.not.exist/test/test123:latest",
 					},
 				},
 				&imgv1b1.Image{
@@ -216,7 +216,7 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "new-img",
 					},
 					Spec: imgv1b1.ImageSpec{
-						From: "centos:latest",
+						Source: "centos:latest",
 					},
 				},
 			},
@@ -350,7 +350,7 @@ func TestImportPath(t *testing.T) {
 			err:  "no unqualified registries found",
 			timp: &imgv1b1.ImageImport{
 				Spec: imgv1b1.ImageImportSpec{
-					From: "centos:latest",
+					Source: "centos:latest",
 				},
 			},
 		},
@@ -359,7 +359,7 @@ func TestImportPath(t *testing.T) {
 			unqreg: []string{"docker.io"},
 			timp: &imgv1b1.ImageImport{
 				Spec: imgv1b1.ImageImportSpec{
-					From: "centos:latest",
+					Source: "centos:latest",
 				},
 			},
 		},
@@ -367,7 +367,7 @@ func TestImportPath(t *testing.T) {
 			name: "happy path with full image reference",
 			timp: &imgv1b1.ImageImport{
 				Spec: imgv1b1.ImageImportSpec{
-					From: "docker.io/centos:latest",
+					Source: "docker.io/centos:latest",
 				},
 			},
 		},
@@ -376,7 +376,7 @@ func TestImportPath(t *testing.T) {
 			err:  "invalid reference format",
 			timp: &imgv1b1.ImageImport{
 				Spec: imgv1b1.ImageImportSpec{
-					From: "docker.io/!<S87sdf<<>>",
+					Source: "docker.io/!<S87sdf<<>>",
 				},
 			},
 		},
@@ -386,7 +386,7 @@ func TestImportPath(t *testing.T) {
 			unqreg: []string{"docker.io"},
 			timp: &imgv1b1.ImageImport{
 				Spec: imgv1b1.ImageImportSpec{
-					From: "centos:idonotexisthopefully",
+					Source: "centos:idonotexisthopefully",
 				},
 			},
 		},
@@ -395,7 +395,7 @@ func TestImportPath(t *testing.T) {
 			err:  "unable to create image closer: pinging container registry",
 			timp: &imgv1b1.ImageImport{
 				Spec: imgv1b1.ImageImportSpec{
-					From: "i.do.not.exist.com/centos:latest",
+					Source: "i.do.not.exist.com/centos:latest",
 				},
 			},
 		},
