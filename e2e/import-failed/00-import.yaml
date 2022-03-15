@@ -4,5 +4,5 @@ metadata:
   name: invalid
 spec:
   image: invalid
-  from: a.b.c.d/test/123:latest
+  source: a.b.c.d/test/123:latest
   mirror: false

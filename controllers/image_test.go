@@ -111,7 +111,7 @@ func TestImageCreated(t *testing.T) {
 			Name:      "aimg",
 		},
 		Spec: imgv1b1.ImageSpec{
-			From:   "centos:7",
+			Source: "centos:7",
 			Mirror: true,
 		},
 	}
@@ -174,7 +174,7 @@ func TestImageUpdated(t *testing.T) {
 			Name:      "aimg",
 		},
 		Spec: imgv1b1.ImageSpec{
-			From:   "centos:7",
+			Source: "centos:7",
 			Mirror: true,
 		},
 	}
@@ -192,7 +192,7 @@ func TestImageUpdated(t *testing.T) {
 		t.Errorf("expected %+v, found %+v", img, svc.db["namespace/aimg"])
 	}
 
-	img.Spec.From = "rhel:latest"
+	img.Spec.Source = "rhel:latest"
 	if _, err := imgcli.ShipwrightV1beta1().Images("namespace").Update(
 		ctx, img, metav1.UpdateOptions{},
 	); err != nil {
@@ -253,7 +253,7 @@ func TestImageParallel(t *testing.T) {
 				Name:      fmt.Sprintf("img-%d", i),
 			},
 			Spec: imgv1b1.ImageSpec{
-				From:   "centos:7",
+				Source: "centos:7",
 				Mirror: true,
 			},
 		}
@@ -312,7 +312,7 @@ func TestImageDeleted(t *testing.T) {
 			Name:      "aimg",
 		},
 		Spec: imgv1b1.ImageSpec{
-			From:   "centos:7",
+			Source: "centos:7",
 			Mirror: true,
 		},
 	}

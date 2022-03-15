@@ -28,13 +28,13 @@ import (
 
 func init() {
 	imageimport.Flags().StringP("namespace", "n", "", "namespace to use")
-	imageimport.Flags().StringP("from", "f", "", "image source for the import")
+	imageimport.Flags().StringP("source", "s", "", "image source for the import")
 	imageimport.Flags().Bool("mirror", false, "mirror the image")
 	imageimport.Flags().Bool("insecure-source", false, "skip tls check for the remote registry")
 }
 
 var imageimport = &cobra.Command{
-	Use:     "import --from docker.io/library/centos -n <namespace> <image name>",
+	Use:     "import --source docker.io/library/centos -n <namespace> <image name>",
 	Short:   "Imports an Image",
 	Long:    static.Text["import_help_header"],
 	Example: static.Text["import_help_examples"],
@@ -49,7 +49,7 @@ var imageimport = &cobra.Command{
 			return err
 		}
 
-		from, err := c.Flags().GetString("from")
+		source, err := c.Flags().GetString("source")
 		if err != nil {
 			return err
 		}
@@ -72,7 +72,7 @@ var imageimport = &cobra.Command{
 		opts := services.ImportOpts{
 			Namespace: ns,
 			Image:     args[0],
-			From:      from,
+			Source:    source,
 			Mirror:    &mirror,
 			Insecure:  &ins,
 		}

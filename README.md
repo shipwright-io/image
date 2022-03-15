@@ -47,7 +47,7 @@ a section below showing how to properly compile it. The following command mirror
 cluster a Container Image hosted in quay.io:
 
 ```
-$ kubectl image import operator --from quay.io/shipwright/imgctrl:latest --mirror
+$ kubectl image import operator --source quay.io/shipwright/imgctrl:latest --mirror
 ```
 
 Users can observe the mirror process by inspected the created ImageImport object:
@@ -70,17 +70,17 @@ metadata:
   name: operator
   namespace: namespace
 spec:
-  from: quay.io/shipwright/imgctrl:latest
+  source: quay.io/shipwright/imgctrl:latest
   insecure: false
   mirror: true
 status:
   hashReferences:
-  - from: quay.io/shipwright/imgctrl:latest
+  - source: quay.io/shipwright/imgctrl:latest
     imageReference: mirror.registry/ns/name@<sha>
     importedAt: "2022-02-06T19:06:24Z"
 ```
 
-Once you have an Image created you don't need to provide the `--from` flag if you want to import
+Once you have an Image created you don't need to provide the `--source` flag if you want to import
 the image from the same repository again. Imagining that eventually `operator:latest` will differ
 from the version we just mirrored users can issue the following command:
 
@@ -100,15 +100,15 @@ metadata:
   name: operator
   namespace: namespace
 spec:
-  from: quay.io/shipwright/imgctrl:latest
+  source: quay.io/shipwright/imgctrl:latest
   insecure: false
   mirror: true
 status:
   hashReferences:
-  - from: quay.io/shipwright/imgctrl:latest
+  - source: quay.io/shipwright/imgctrl:latest
     imageReference: mirror.registry/ns/name@<another-sha>
     importedAt: "2022-02-06T19:09:24Z"
-  - from: quay.io/shipwright/imgctrl:latest
+  - source: quay.io/shipwright/imgctrl:latest
     imageReference: mirror.registry/ns/name@<sha>
     importedAt: "2022-02-06T19:06:24Z"
 ```
@@ -138,12 +138,12 @@ metadata:
   name: myapp-devel
   namespace: namespace
 spec:
-  from: quay.io/company/myapp:devel
+  source: quay.io/company/myapp:devel
   insecure: false
   mirror: true
 status:
   hashReferences:
-  - from: quay.io/company/myapp:devel
+  - source: quay.io/company/myapp:devel
     imageReference: mirror.registry.io/namespace/myapp-devel@<sha>
     importedAt: "2022-02-06T19:06:24Z"
 ```
@@ -152,7 +152,7 @@ On an Image `.spec` property the following fields are valid:
 
 | Property   | Description                                                                                  |
 | ---------- | -------------------------------------------------------------------------------------------- |
-| from       | Indicates the source of the image (from where Shipwright Images should import it)            |
+| source     | Indicates the source of the image (from where Shipwright Images should import it)            |
 | mirror     | Informs if the Image should be mirrored to another registry                                  |
 | insecure   | Indicates that Shipwright Images should skip tls verification during the image import/mirror |
 
@@ -168,7 +168,7 @@ properties:
 
 | Name           | Description                                                                   |
 | -------------- | ----------------------------------------------------------------------------- |
-| from           | From where this image was imported, generally points to an image by tag       |
+| source         | From where this image was imported, generally points to an image by tag       |
 | importedAt     | Date and time of the import                                                   |
 | imageReference | Where this reference points to (by sha), may point to the mirror registry     |
 
@@ -182,13 +182,13 @@ kind: ImageImport
 metadata:
   name: myapp-0
 spec:
-  from: docker.io/library/nginx:latest
+  source: docker.io/library/nginx:latest
   insecure: false
   mirror: false
   image: nginx
 status:
   hashReference:
-    from: docker.io/library/nginx:latest
+    source: docker.io/library/nginx:latest
     imageReference: <redacted>
     importedAt: "2022-02-06T20:37:46Z"
   importAttempts:
@@ -206,7 +206,7 @@ its fields are:
 
 | Name           | Description                                                                   |
 | -------------- | ----------------------------------------------------------------------------- |
-| from           | From where this image was imported, generally points to an image by tag       |
+| source         | From where this image was imported, generally points to an image by tag       |
 | importedAt     | Date and time of the import                                                   |
 | imageReference | Where this reference points to (by hash), may point to the mirror registry    |
 

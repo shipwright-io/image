@@ -4,5 +4,5 @@ metadata:
   name: alpine-mirror
 spec:
   image: alpine-mirror
-  from: docker.io/library/alpine:latest
+  source: docker.io/library/alpine:latest
   mirror: true

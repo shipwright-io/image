@@ -48,7 +48,7 @@ spec:
             properties:
               image:
                 type: string
-              from:
+              source:
                 type: string
               mirror:
                 type: boolean
@@ -131,7 +131,7 @@ spec:
               hashReference:
                 type: object
                 properties:
-                  from:
+                  source:
                     type: string
                   importedAt:
                     type: string
@@ -165,8 +165,8 @@ spec:
       name: mirror
       type: boolean
     - description: Current image source
-      jsonPath: .spec.from
-      name: from
+      jsonPath: .spec.source
+      name: source
       type: string
     subresources:
       status: {}
@@ -177,7 +177,7 @@ spec:
           spec:
             type: object
             properties:
-              from:
+              source:
                 type: string
               mirror:
                 type: boolean
@@ -192,7 +192,7 @@ spec:
                 items:
                   type: object
                   properties:
-                    from:
+                    source:
                       type: string
                     importedAt:
                       type: string

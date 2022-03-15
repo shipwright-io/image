@@ -160,11 +160,11 @@ func pullImage(
 	}
 
 	str := fmt.Sprintf("docker-archive:%s", fp.Name())
-	fromref, err := alltransports.ParseImageName(str)
+	srcref, err := alltransports.ParseImageName(str)
 	if err != nil {
 		cleanup()
 		return nil, nil, fmt.Errorf("error parsing reference: %w", err)
 	}
 
-	return fromref, cleanup, nil
+	return srcref, cleanup, nil
 }

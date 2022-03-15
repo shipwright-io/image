@@ -131,7 +131,7 @@ func saveImage(ctx context.Context, tidx imageindex) (*os.File, func(), error) {
 
 // pushImages sends an image through GRPC to a imgctrl instance.
 func pushImage(
-	ctx context.Context, idx imageindex, from *os.File, token string, insecure bool,
+	ctx context.Context, idx imageindex, source *os.File, token string, insecure bool,
 ) error {
 	conn, err := grpc.DialContext(
 		ctx, idx.server, grpc.WithTransportCredentials(
@@ -168,7 +168,7 @@ func pushImage(
 		return err
 	}
 
-	finfo, err := from.Stat()
+	finfo, err := source.Stat()
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func pushImage(
 	pbar.SetMax(fsize)
 	defer pbar.Wait()
 
-	if err := pb.Send(from, fsize, stream, pbar); err != nil {
+	if err := pb.Send(source, fsize, stream, pbar); err != nil {
 		pbar.Abort()
 		if _, nerr := stream.CloseAndRecv(); err != nil {
 			return nerr

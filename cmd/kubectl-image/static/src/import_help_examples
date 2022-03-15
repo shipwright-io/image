@@ -1,7 +1,7 @@
   This is a valid command usage:
 
   kubectl image import					\
-  	--from docker.io/library/fedora:latest		\
+  	--source docker.io/library/fedora:latest	\
 	--mirror=false					\
 	--insecure-source=false				\
 	-n devel					\

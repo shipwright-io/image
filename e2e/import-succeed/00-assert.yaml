@@ -3,9 +3,9 @@ kind: Image
 metadata:
   name: my-image
 spec:
-  from: quay.io/centos/centos:latest
+  source: quay.io/centos/centos:latest
   insecure: false
   mirror: false
 status:
   hashReferences:
-  - from: quay.io/centos/centos:latest
+  - source: quay.io/centos/centos:latest

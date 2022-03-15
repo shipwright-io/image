@@ -99,7 +99,7 @@ func (t *ImageIO) Push(ctx context.Context, ns, name string, fpath string) error
 	opts := ImportOpts{
 		Namespace: ns,
 		Image:     name,
-		From:      dstref.DockerReference().String(),
+		Source:    dstref.DockerReference().String(),
 		Mirror:    pointer.Bool(false),
 		Insecure:  pointer.Bool(insecure),
 	}
@@ -146,13 +146,13 @@ func (t *ImageIO) Pull(ctx context.Context, ns, name string) (*os.File, func(), 
 		return nil, nil, fmt.Errorf("reference for current generation not found")
 	}
 
-	from := fmt.Sprintf("docker://%s", imgref)
-	fromRef, err := alltransports.ParseImageName(from)
+	src := fmt.Sprintf("docker://%s", imgref)
+	srcRef, err := alltransports.ParseImageName(src)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing image reference: %w", err)
 	}
 
-	toRef, cleanup, err := istore.Save(ctx, fromRef)
+	toRef, cleanup, err := istore.Save(ctx, srcRef)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error saving image locally: %w", err)
 	}
