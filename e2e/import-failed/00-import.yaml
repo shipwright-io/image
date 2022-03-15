@@ -3,6 +3,6 @@ kind: ImageImport
 metadata:
   name: invalid
 spec:
-  targetImage: invalid
+  image: invalid
   from: a.b.c.d/test/123:latest
   mirror: false

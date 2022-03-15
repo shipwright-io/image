@@ -97,11 +97,11 @@ func (t *ImageIO) Push(ctx context.Context, ns, name string, fpath string) error
 	insecure := regctx.DockerInsecureSkipTLSVerify == types.OptionalBoolTrue
 
 	opts := ImportOpts{
-		Namespace:   ns,
-		TargetImage: name,
-		From:        dstref.DockerReference().String(),
-		Mirror:      pointer.Bool(false),
-		Insecure:    pointer.Bool(insecure),
+		Namespace: ns,
+		Image:     name,
+		From:      dstref.DockerReference().String(),
+		Mirror:    pointer.Bool(false),
+		Insecure:  pointer.Bool(insecure),
 	}
 
 	impsvc := NewImageImport(nil, t.imgcli, nil)

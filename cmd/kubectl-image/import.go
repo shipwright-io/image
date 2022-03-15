@@ -70,11 +70,11 @@ var imageimport = &cobra.Command{
 		}
 
 		opts := services.ImportOpts{
-			Namespace:   ns,
-			TargetImage: args[0],
-			From:        from,
-			Mirror:      &mirror,
-			Insecure:    &ins,
+			Namespace: ns,
+			Image:     args[0],
+			From:      from,
+			Mirror:    &mirror,
+			Insecure:  &ins,
 		}
 
 		ti, err := tisvc.NewImport(ctx, opts)

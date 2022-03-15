@@ -51,7 +51,7 @@ func TestImageImportSync(t *testing.T) {
 					Name:      "empty-img",
 				},
 				Spec: imgv1b1.ImageImportSpec{
-					TargetImage: "empty-img",
+					Image: "empty-img",
 				},
 				Status: imgv1b1.ImageImportStatus{
 					HashReference: &imgv1b1.HashReference{},
@@ -64,7 +64,7 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "empty-img",
 					},
 					Spec: imgv1b1.ImageImportSpec{
-						TargetImage: "empty-img",
+						Image: "empty-img",
 					},
 					Status: imgv1b1.ImageImportStatus{
 						HashReference: &imgv1b1.HashReference{},
@@ -81,7 +81,7 @@ func TestImageImportSync(t *testing.T) {
 					Name:      "empty-img",
 				},
 				Spec: imgv1b1.ImageImportSpec{
-					TargetImage: "empty-img",
+					Image: "empty-img",
 				},
 				Status: imgv1b1.ImageImportStatus{
 					ImportAttempts: []imgv1b1.ImportAttempt{
@@ -96,7 +96,7 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "empty-img",
 					},
 					Spec: imgv1b1.ImageImportSpec{
-						TargetImage: "empty-img",
+						Image: "empty-img",
 					},
 					Status: imgv1b1.ImageImportStatus{
 						ImportAttempts: []imgv1b1.ImportAttempt{
@@ -108,7 +108,7 @@ func TestImageImportSync(t *testing.T) {
 		},
 		{
 			name:    "empty target img",
-			err:     "empty spec.targetImage",
+			err:     "empty spec.image",
 			succeed: false,
 			timp: &imgv1b1.ImageImport{
 				ObjectMeta: metav1.ObjectMeta{
@@ -126,8 +126,8 @@ func TestImageImportSync(t *testing.T) {
 					Name:      "new-img",
 				},
 				Spec: imgv1b1.ImageImportSpec{
-					TargetImage: "new-img",
-					From:        "centos:latest",
+					Image: "new-img",
+					From:  "centos:latest",
 				},
 			},
 			imgObjects: []runtime.Object{
@@ -137,8 +137,8 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "new-img",
 					},
 					Spec: imgv1b1.ImageImportSpec{
-						TargetImage: "new-img",
-						From:        "centos:latest",
+						Image: "new-img",
+						From:  "centos:latest",
 					},
 				},
 				&imgv1b1.Image{
@@ -161,7 +161,7 @@ func TestImageImportSync(t *testing.T) {
 					Name:      "new-img",
 				},
 				Spec: imgv1b1.ImageImportSpec{
-					TargetImage: "new-img",
+					Image: "new-img",
 				},
 			},
 			imgObjects: []runtime.Object{
@@ -171,7 +171,7 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "new-img",
 					},
 					Spec: imgv1b1.ImageImportSpec{
-						TargetImage: "new-img",
+						Image: "new-img",
 					},
 				},
 				&imgv1b1.Image{
@@ -195,8 +195,8 @@ func TestImageImportSync(t *testing.T) {
 					Name:      "new-img",
 				},
 				Spec: imgv1b1.ImageImportSpec{
-					TargetImage: "new-img",
-					From:        "does.not.exist/test/test123:latest",
+					Image: "new-img",
+					From:  "does.not.exist/test/test123:latest",
 				},
 			},
 			imgObjects: []runtime.Object{
@@ -206,8 +206,8 @@ func TestImageImportSync(t *testing.T) {
 						Name:      "new-img",
 					},
 					Spec: imgv1b1.ImageImportSpec{
-						TargetImage: "new-img",
-						From:        "does.not.exist/test/test123:latest",
+						Image: "new-img",
+						From:  "does.not.exist/test/test123:latest",
 					},
 				},
 				&imgv1b1.Image{

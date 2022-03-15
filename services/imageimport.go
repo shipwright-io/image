@@ -76,11 +76,11 @@ func NewImageImport(
 
 // ImportOpts holds the options necessary to call ImageImport.NewImport().
 type ImportOpts struct {
-	Namespace   string
-	TargetImage string
-	From        string
-	Mirror      *bool
-	Insecure    *bool
+	Namespace string
+	Image     string
+	From      string
+	Mirror    *bool
+	Insecure  *bool
 }
 
 // NewImport uses provided ImportOpts to create a new ImageImport object and send it to the
@@ -92,13 +92,13 @@ func (t *ImageImport) NewImport(ctx context.Context, o ImportOpts) (*imgv1b1.Ima
 	ii := &imgv1b1.ImageImport{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: o.Namespace,
-			Name:      fmt.Sprintf("%s-%s", o.TargetImage, impid),
+			Name:      fmt.Sprintf("%s-%s", o.Image, impid),
 		},
 		Spec: imgv1b1.ImageImportSpec{
-			TargetImage: o.TargetImage,
-			From:        o.From,
-			Mirror:      o.Mirror,
-			Insecure:    o.Insecure,
+			Image:    o.Image,
+			From:     o.From,
+			Mirror:   o.Mirror,
+			Insecure: o.Insecure,
 		},
 	}
 
@@ -115,7 +115,7 @@ func (t *ImageImport) NewImageFor(
 ) (*imgv1b1.Image, error) {
 	opts := NewImageOpts{
 		Namespace: ii.Namespace,
-		Name:      ii.Spec.TargetImage,
+		Name:      ii.Spec.Image,
 		From:      ii.Spec.From,
 		Mirror:    pointer.BoolDeref(ii.Spec.Mirror, false),
 		Insecure:  pointer.BoolDeref(ii.Spec.Insecure, false),
@@ -194,7 +194,7 @@ func (t *ImageImport) Sync(ctx context.Context, ii *imgv1b1.ImageImport) error {
 
 	klog.Infof("image import %s/%s needs import, importing...", ii.Namespace, ii.Name)
 	img, err := t.imgcli.ShipwrightV1beta1().Images(ii.Namespace).Get(
-		ctx, ii.Spec.TargetImage, metav1.GetOptions{},
+		ctx, ii.Spec.Image, metav1.GetOptions{},
 	)
 	if err != nil {
 		if !errors.IsNotFound(err) {
@@ -295,7 +295,7 @@ func (t *ImageImport) Import(
 			}
 
 			start := time.Now()
-			timg := ii.Spec.TargetImage
+			timg := ii.Spec.Image
 			imghash, err = istore.Load(ctx, imghash, sysctx, ii.Namespace, timg)
 			if err != nil {
 				return nil, fmt.Errorf("fail to mirror image: %w", err)
@@ -344,13 +344,13 @@ func (t *ImageImport) Get(ctx context.Context, ns, name string) (*imgv1b1.ImageI
 }
 
 // Validate checks if provided ImageImport contain all mandatory fields. If ImageImport does
-// contains an empty "spec.from" we attempt to load the targetImage.
+// contains an empty "spec.from" we attempt to load the image.
 func (t *ImageImport) Validate(ctx context.Context, imp *imgv1b1.ImageImport) error {
 	if err := imp.Validate(); err != nil {
 		return err
 	}
 
-	if _, err := t.imglis.Images(imp.Namespace).Get(imp.Spec.TargetImage); err != nil {
+	if _, err := t.imglis.Images(imp.Namespace).Get(imp.Spec.Image); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		} else if imp.Spec.From == "" {
