@@ -10,6 +10,8 @@ spec:
     listKind: ImageImportList
     plural: imageimports
     singular: imageimport
+    shortNames:
+    - ii
   preserveUnknownFields: false
   scope: Namespaced
   versions:
@@ -152,6 +154,8 @@ spec:
     listKind: ImageList
     plural: images
     singular: image
+    shortNames:
+    - img
   preserveUnknownFields: false
   scope: Namespaced
   versions:
