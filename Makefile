@@ -77,7 +77,7 @@ get-kuttl:
 
 .PHONY: e2e
 e2e:
-	$(KUTTL_BIN) test e2e
+	$(KUTTL_BIN) test --timeout=180 e2e
 
 .PHONY: generate-proto
 generate-proto:
