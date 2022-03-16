@@ -304,7 +304,7 @@ func (t *ImageImport) FailedImportAttempts() int {
 }
 
 // RegisterImportFailure updates the import attempts slice appending a new failed attempt with
-// the provided error. This function also sets ImageImport.Status.Condition field.
+// the provided error. This function also sets ImageImport.Status.Conditions field.
 func (t *ImageImport) RegisterImportFailure(err error) {
 	t.Status.ImportAttempts = append(
 		t.Status.ImportAttempts,
@@ -329,7 +329,7 @@ func (t *ImageImport) RegisterImportFailure(err error) {
 	failures := len(t.Status.ImportAttempts)
 	if failures >= MaxImportAttempts {
 		// here we have exhausted all import attempts, set it as Failed and return.
-		t.Status.Condition = nextcond
+		t.Status.Conditions = []metav1.Condition{nextcond}
 		return
 	}
 
@@ -339,11 +339,11 @@ func (t *ImageImport) RegisterImportFailure(err error) {
 	nextcond.Status = metav1.ConditionFalse
 	nextcond.Reason = ConditionReasonProgressing
 	nextcond.Message = message
-	nextcond.LastTransitionTime = t.Status.Condition.LastTransitionTime
-	if nextcond.LastTransitionTime.IsZero() {
-		nextcond.LastTransitionTime = metav1.NewTime(time.Now())
+	nextcond.LastTransitionTime = metav1.NewTime(time.Now())
+	if len(t.Status.Conditions) > 0 {
+		nextcond.LastTransitionTime = t.Status.Conditions[0].LastTransitionTime
 	}
-	t.Status.Condition = nextcond
+	t.Status.Conditions = []metav1.Condition{nextcond}
 }
 
 // RegisterImportSuccess appends a new ImportAttempt to the status registering it worked as
@@ -357,12 +357,14 @@ func (t *ImageImport) RegisterImportSuccess() {
 		},
 	)
 
-	t.Status.Condition = metav1.Condition{
-		Type:               ConditionTypeImported,
-		Status:             metav1.ConditionTrue,
-		Reason:             ConditionReasonImageImported,
-		Message:            "Image imported successfully",
-		LastTransitionTime: metav1.NewTime(time.Now()),
+	t.Status.Conditions = []metav1.Condition{
+		{
+			Type:               ConditionTypeImported,
+			Status:             metav1.ConditionTrue,
+			Reason:             ConditionReasonImageImported,
+			Message:            "Image imported successfully",
+			LastTransitionTime: metav1.NewTime(time.Now()),
+		},
 	}
 }
 
@@ -378,9 +380,9 @@ type ImageImportSpec struct {
 
 // ImageImportStatus holds the current status for an image tag import attempt.
 type ImageImportStatus struct {
-	Condition      metav1.Condition `json:"condition"`
-	ImportAttempts []ImportAttempt  `json:"importAttempts"`
-	HashReference  *HashReference   `json:"hashReference,omitempty"`
+	Conditions     []metav1.Condition `json:"conditions"`
+	ImportAttempts []ImportAttempt    `json:"importAttempts"`
+	HashReference  *HashReference     `json:"hashReference,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
