@@ -83,7 +83,7 @@ func main() {
 	// create controller layer
 	imctrl := controllers.NewImageImport(impsvc)
 	itctrl := controllers.NewImage(imgsvc)
-	mtctrl := controllers.NewMutatingWebHook(impsvc, imgsvc)
+	vdctrl := controllers.NewValidatingWebHook(impsvc, imgsvc)
 	tioctr := controllers.NewImageIO(tiosvc, usrsvc)
 	moctrl := controllers.NewMetric()
 
@@ -104,7 +104,7 @@ func main() {
 	}
 	klog.Info("caches in sync, moving on.")
 
-	st := starter.New(corcli, mtctrl, itctrl, moctrl, tioctr, imctrl)
+	st := starter.New(corcli, vdctrl, itctrl, moctrl, tioctr, imctrl)
 	if err := st.Start(ctx, "imgctrl-leader-election"); err != nil {
 		klog.Errorf("unable to start controllers: %s", err)
 	}

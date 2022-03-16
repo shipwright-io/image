@@ -68,7 +68,7 @@ func Test_responseError(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			wr := httptest.NewRecorder()
-			mt := NewMutatingWebHook(imgImportValidator{}, imgValidator{})
+			mt := NewValidatingWebHook(imgImportValidator{}, imgValidator{})
 			mt.responseError(wr, tt.req, fmt.Errorf("error"))
 
 			if wr.Code != tt.code {
@@ -112,7 +112,7 @@ func Test_responseAuthorized(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			wr := httptest.NewRecorder()
-			mt := NewMutatingWebHook(imgImportValidator{}, imgValidator{})
+			mt := NewValidatingWebHook(imgImportValidator{}, imgValidator{})
 			mt.responseAuthorized(wr, tt.req)
 
 			if wr.Code != tt.code {
@@ -156,7 +156,7 @@ func Test_image(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewMutatingWebHook(imgImportValidator{}, imgValidator{})
+			mt := NewValidatingWebHook(imgImportValidator{}, imgValidator{})
 
 			imgjson, err := json.Marshal(tt.img)
 			if err != nil {

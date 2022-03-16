@@ -4,10 +4,10 @@ replicas: 1
 image: "ghcr.io/shipwright-io/imgctrl:latest"
 # key is the tls key to be used by imgctrl when communicating with kubernetes api.
 # if not provided a self signed one will be generated during install and upgrade.
-# this key must contain as alternative name 'mutating-webhooks.<namespace>.svc'.
+# this key must contain as alternative name 'validating-webhook.<namespace>.svc'.
 key: ""
 # cert is the certificate to be trusted by kubernetes api when communicating with
 # imgctrl. if not provided a self signed one will be generated during install and
 # upgrade.  this cert must contain as alternative name
-# 'mutating-webhooks.<namespace>.svc'.
+# 'validating-webhook.<namespace>.svc'.
 cert: ""
