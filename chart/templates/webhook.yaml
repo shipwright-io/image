@@ -3,7 +3,7 @@ Here we generate a self signed certificate to use if user has not provided us wi
 through .Values.cert and .Values.key. Once this chart is installed we never change the
 certificates.
 */}}
-{{- $altNames := list ( printf "mutating-webhooks.%s.svc" .Release.Namespace ) }}
+{{- $altNames := list ( printf "validating-webhook.%s.svc" .Release.Namespace ) }}
 {{- $ca := genCA "imgctrl" 365 }}
 {{- $cert := genSignedCert "imgctrl" nil $altNames 365 $ca }}
 {{- $secret := (lookup "v1" "Secret" .Release.Namespace "certs" ) }}
@@ -23,18 +23,26 @@ data:
   {{- end }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
-kind: MutatingWebhookConfiguration
+kind: ValidatingWebhookConfiguration
 metadata:
   name: imgctrl
 webhooks:
-- name: tag.shipwright.io
-  admissionReviewVersions:
-  - v1
-  sideEffects: None
+- name: image.shipwright.io
+  rules:
+  - apiGroups:
+    - shipwright.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - images
+    scope: Namespaced
   clientConfig:
     service:
-      name: mutating-webhooks
       namespace: {{ .Release.Namespace }}
+      name: validating-webhook
       path: "/image"
       port: 8080
     {{- if $secret }}
@@ -42,24 +50,26 @@ webhooks:
     {{- else }}
     caBundle: {{ default $cert.Cert .Values.cert | b64enc }}
     {{- end }}
-  rules:
-  - apiGroups:
-    - "shipwright.io"
-    apiVersions:
-    - "v1beta1"
-    resources: 
-    - images
-    operations: 
-    - CREATE
-    - UPDATE
-- name: imageimport.shipwright.io
   admissionReviewVersions:
   - v1
   sideEffects: None
+  timeoutSeconds: 3
+- name: imageimport.shipwright.io
+  rules:
+  - apiGroups:
+    - shipwright.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - imageimports
+    scope: Namespaced
   clientConfig:
     service:
-      name: mutating-webhooks
       namespace: {{ .Release.Namespace }}
+      name: validating-webhook
       path: "/imageimport"
       port: 8080
     {{- if $secret }}
@@ -67,13 +77,7 @@ webhooks:
     {{- else }}
     caBundle: {{ default $cert.Cert .Values.cert | b64enc }}
     {{- end }}
-  rules:
-  - apiGroups:
-    - "shipwright.io"
-    apiVersions:
-    - "v1beta1"
-    resources: 
-    - imageimports
-    operations: 
-    - CREATE
-    - UPDATE
+  admissionReviewVersions:
+  - v1
+  sideEffects: None
+  timeoutSeconds: 3

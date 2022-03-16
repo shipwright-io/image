@@ -321,7 +321,7 @@ Tag.  To provide your certificate use Helm chart `key` and `cert` variables. Imp
 notice that the certificate must be valid for the following alternative names:
 
 ```
-- mutating-webhooks.<shipwright namespace>.svc.
+- validating-webhook.<shipwright namespace>.svc.
 	- this name is used when kubernetes api server validates images.
 - the ingress name.
 	- users will use this to reach shipwright images when pulling or pushing.
@@ -329,12 +329,12 @@ notice that the certificate must be valid for the following alternative names:
 
 If you don't provide any certificate during installation a self signed one will be created and
 deployed, it is valid for one year. You can update the certificates whenever you want, for that
-you need to edit a secret called `certs` in Shipwright Images's namespace and a mutating webhook
+you need to edit a secret called `certs` in Shipwright Images's namespace and a validating webhook
 config called `imgctrl`.
 
 ```
 $ kubectl edit secret certs
-$ kubectl edit mutatingwebhookconfigurations imgctrl
+$ kubectl edit validatingwebhookconfigurations imgctrl
 ```
 
 ### Building kubectl-image plugin

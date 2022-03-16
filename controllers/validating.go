@@ -45,9 +45,9 @@ type ImageValidator interface {
 	Validate(context.Context, *imgv1b1.Image) error
 }
 
-// MutatingWebHook handles Mutation requests from kubernetes api, e.g. validate Image and
+// ValidatingWebHook handles validation requests from kubernetes api, e.g. validate Image and
 // ImageImport objects.
-type MutatingWebHook struct {
+type ValidatingWebHook struct {
 	key     string
 	cert    string
 	bind    string
@@ -56,16 +56,16 @@ type MutatingWebHook struct {
 	decoder runtime.Decoder
 }
 
-// NewMutatingWebHook returns a web hook handler for kubernetes api mutation requests. This
+// NewValidatingWebHook returns a web hook handler for kubernetes api validation requests. This
 // webhook validate Image and ImageImport objects when user saves them. This function will
 // panic if certificates are not found under "olmCertDir". When deploying this operator using
 // OLM the certificates will be automatically mounted in this location.
-func NewMutatingWebHook(tival ImageImportValidator, imgval ImageValidator) *MutatingWebHook {
+func NewValidatingWebHook(tival ImageImportValidator, imgval ImageValidator) *ValidatingWebHook {
 	runtimeScheme := runtime.NewScheme()
 	codecs := serializer.NewCodecFactory(runtimeScheme)
 
 	olmCertDir := "/tmp/k8s-webhook-server/serving-certs"
-	return &MutatingWebHook{
+	return &ValidatingWebHook{
 		key:     fmt.Sprintf("%s/tls.key", olmCertDir),
 		cert:    fmt.Sprintf("%s/tls.crt", olmCertDir),
 		bind:    ":8080",
@@ -76,18 +76,18 @@ func NewMutatingWebHook(tival ImageImportValidator, imgval ImageValidator) *Muta
 }
 
 // Name returns a name identifier for this controller.
-func (m *MutatingWebHook) Name() string {
-	return "mutating webhook"
+func (m *ValidatingWebHook) Name() string {
+	return "validating webhook"
 }
 
 // RequiresLeaderElection returns if this controller requires or not a leader lease to run.
-func (m *MutatingWebHook) RequiresLeaderElection() bool {
+func (m *ValidatingWebHook) RequiresLeaderElection() bool {
 	return false
 }
 
 // responseError writes in the provided ResponseWriter an AdmissionReview with response status set
 // to an error. If AdmissionReview contains an UID that is inserted into the reply as well.
-func (m *MutatingWebHook) responseError(
+func (m *ValidatingWebHook) responseError(
 	w http.ResponseWriter, req *admnv1.AdmissionReview, err error,
 ) {
 	var ruid types.UID
@@ -117,7 +117,7 @@ func (m *MutatingWebHook) responseError(
 }
 
 // responseAuthorized informs kubernetes the object creation is authorized without modifications.
-func (m *MutatingWebHook) responseAuthorized(w http.ResponseWriter, req *admnv1.AdmissionReview) {
+func (m *ValidatingWebHook) responseAuthorized(w http.ResponseWriter, req *admnv1.AdmissionReview) {
 	var ruid types.UID
 	if req.Request != nil {
 		ruid = req.Request.UID
@@ -143,7 +143,7 @@ func (m *MutatingWebHook) responseAuthorized(w http.ResponseWriter, req *admnv1.
 }
 
 // imageimport is our http handler for ImageImport objects validation.
-func (m *MutatingWebHook) imageimport(w http.ResponseWriter, r *http.Request) {
+func (m *ValidatingWebHook) imageimport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	reviewReq := &admnv1.AdmissionReview{}
@@ -200,7 +200,7 @@ func (m *MutatingWebHook) imageimport(w http.ResponseWriter, r *http.Request) {
 }
 
 // image is our http handler for Image validation.
-func (m *MutatingWebHook) image(w http.ResponseWriter, r *http.Request) {
+func (m *ValidatingWebHook) image(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	reviewReq := &admnv1.AdmissionReview{}
@@ -257,7 +257,7 @@ func (m *MutatingWebHook) image(w http.ResponseWriter, r *http.Request) {
 }
 
 // Start puts the http server online.
-func (m *MutatingWebHook) Start(ctx context.Context) error {
+func (m *ValidatingWebHook) Start(ctx context.Context) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/image", m.image)
 	mux.HandleFunc("/imageimport", m.imageimport)
