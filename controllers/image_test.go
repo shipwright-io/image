@@ -79,12 +79,13 @@ func TestImageCreated(t *testing.T) {
 
 	imgcli := imgfake.NewSimpleClientset()
 	imginf := imginformer.NewSharedInformerFactory(imgcli, time.Minute)
+	impsvc := &imgimportsvc{imginf: imginf}
 	svc := &imgsvc{
 		imginf: imginf,
 		imgcli: imgcli,
 	}
 
-	ctrl := NewImage(svc)
+	ctrl := NewImage(svc, impsvc)
 	ctrl.tokens = make(chan bool, 1)
 	imginf.Start(ctx.Done())
 
@@ -142,12 +143,13 @@ func TestImageUpdated(t *testing.T) {
 
 	imgcli := imgfake.NewSimpleClientset()
 	imginf := imginformer.NewSharedInformerFactory(imgcli, time.Minute)
+	impsvc := &imgimportsvc{imginf: imginf}
 	svc := &imgsvc{
 		imginf: imginf,
 		imgcli: imgcli,
 	}
 
-	ctrl := NewImage(svc)
+	ctrl := NewImage(svc, impsvc)
 	ctrl.tokens = make(chan bool, 1)
 	imginf.Start(ctx.Done())
 
@@ -219,13 +221,14 @@ func TestImageParallel(t *testing.T) {
 
 	imgcli := imgfake.NewSimpleClientset()
 	imginf := imginformer.NewSharedInformerFactory(imgcli, time.Minute)
+	impsvc := &imgimportsvc{imginf: imginf}
 	svc := &imgsvc{
 		delay:  3 * time.Second,
 		imginf: imginf,
 		imgcli: imgcli,
 	}
 
-	ctrl := NewImage(svc)
+	ctrl := NewImage(svc, impsvc)
 	ctrl.tokens = make(chan bool, 5)
 	imginf.Start(ctx.Done())
 
@@ -280,12 +283,13 @@ func TestImageDeleted(t *testing.T) {
 
 	imgcli := imgfake.NewSimpleClientset()
 	imginf := imginformer.NewSharedInformerFactory(imgcli, time.Minute)
+	impsvc := &imgimportsvc{imginf: imginf}
 	svc := &imgsvc{
 		imginf: imginf,
 		imgcli: imgcli,
 	}
 
-	ctrl := NewImage(svc)
+	ctrl := NewImage(svc, impsvc)
 	ctrl.tokens = make(chan bool, 1)
 	imginf.Start(ctx.Done())
 

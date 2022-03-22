@@ -16,6 +16,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -46,7 +47,7 @@ type Image struct {
 
 // NewImage returns a new controller for Images. This controller runs image imports in parallel,
 // at a given time we can have at max "tokens" distinct images being processed (hardcoded to 10).
-func NewImage(imgsvc ImageSyncer) *Image {
+func NewImage(imgsvc ImageSyncer, impsvc ImageImportSyncer) *Image {
 	ratelimit := workqueue.NewItemExponentialFailureRateLimiter(time.Second, time.Minute)
 	ctrl := &Image{
 		queue:  workqueue.NewRateLimitingQueue(ratelimit),
@@ -54,6 +55,7 @@ func NewImage(imgsvc ImageSyncer) *Image {
 		tokens: make(chan bool, 10),
 	}
 	imgsvc.AddEventHandler(ctrl.handlers())
+	impsvc.AddEventHandler(ctrl.handlers())
 	return ctrl
 }
 
@@ -68,13 +70,32 @@ func (t *Image) RequiresLeaderElection() bool {
 }
 
 // enqueueEvent generates a key using "namespace/name" for the event received and then enqueues
-// it to be processed.
-func (t *Image) enqueueEvent(o interface{}) {
-	key, err := cache.MetaNamespaceKeyFunc(o)
-	if err != nil {
-		klog.Errorf("fail to enqueue event: %v : %s", o, err)
+// it to be processed. "namespace" and "name" refer to the image that generated the event. If the
+// received event is for an ImageImport object we extract the "target image" information from it
+// and enqueue an event for the Image instead.
+func (t *Image) enqueueEvent(obj interface{}) {
+	// if the event is for an Image object we extract the meta namespace key and enqueue it
+	// without further processing.
+	if _, ok := obj.(*imgv1b1.Image); ok {
+		key, err := cache.MetaNamespaceKeyFunc(obj)
+		if err != nil {
+			klog.Errorf("fail to enqueue event: %v : %s", obj, err)
+			return
+		}
+		t.queue.AddRateLimited(key)
 		return
 	}
+
+	// from this point on we expect the event to be related to an ImageImport object. If it
+	// is not we log an error but if it is then we extract the target image information and
+	// enqueue an event for it instead.
+	ii, ok := obj.(*imgv1b1.ImageImport)
+	if !ok {
+		klog.Errorf("received event for an unkonwn object type: %+v", obj)
+		return
+	}
+
+	key := fmt.Sprintf("%s/%s", ii.Namespace, ii.Spec.Image)
 	t.queue.AddRateLimited(key)
 }
 
