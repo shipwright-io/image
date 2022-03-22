@@ -82,7 +82,7 @@ func main() {
 
 	// create controller layer
 	imctrl := controllers.NewImageImport(impsvc)
-	itctrl := controllers.NewImage(imgsvc)
+	itctrl := controllers.NewImage(imgsvc, impsvc)
 	vdctrl := controllers.NewValidatingWebHook(impsvc, imgsvc)
 	tioctr := controllers.NewImageIO(tiosvc, usrsvc)
 	moctrl := controllers.NewMetric()
