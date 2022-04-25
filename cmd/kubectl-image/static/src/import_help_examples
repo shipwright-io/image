@@ -1,9 +1,9 @@
   This is a valid command usage:
 
   kubectl image import					\
-  	--source docker.io/library/fedora:latest	\
-	--mirror=false					\
-	--insecure-source=false				\
+	--source docker.io/library/fedora:latest	\
+	--mirror					\
+	--insecure-source				\
 	-n devel					\
 	fedora 
 
@@ -13,3 +13,13 @@
   Mirror informs Shipwright image controller that we need to mirror
   the image into our mirror registry while Insecure Source informs
   that TLS checks should be omitted when reaching the remote registry.
+
+  To create a tag to hash map for a given image without mirroring it
+  you can use the following command:
+
+  kubectl image import					\
+	--source docker.io/library/fedora:latest	\
+	--no-mirror					\
+	--insecure-source				\
+	-n devel					\
+	fedora
