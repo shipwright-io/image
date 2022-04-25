@@ -20,6 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/pointer"
 
 	"github.com/shipwright-io/image/cmd/kubectl-image/static"
 	itagcli "github.com/shipwright-io/image/infra/images/v1beta1/gen/clientset/versioned"
@@ -29,8 +30,12 @@ import (
 func init() {
 	imageimport.Flags().StringP("namespace", "n", "", "namespace to use")
 	imageimport.Flags().StringP("source", "s", "", "image source for the import")
+	imageimport.Flags().Bool("insecure-source", false, "skip remote registry tls")
+	imageimport.Flags().Bool("no-insecure-source", false, "do not skip remote registry tls")
 	imageimport.Flags().Bool("mirror", false, "mirror the image")
-	imageimport.Flags().Bool("insecure-source", false, "skip tls check for the remote registry")
+	imageimport.Flags().Bool("no-mirror", false, "do not mirror the image")
+	_ = imageimport.Flags().MarkHidden("no-mirror")
+	_ = imageimport.Flags().MarkHidden("no-insecure-source")
 }
 
 var imageimport = &cobra.Command{
@@ -59,9 +64,41 @@ var imageimport = &cobra.Command{
 			return err
 		}
 
+		nomirror, err := c.Flags().GetBool("no-mirror")
+		if err != nil {
+			return err
+		}
+
+		if nomirror && mirror {
+			return fmt.Errorf("--no-mirror and --mirror conflict")
+		}
+
+		var mirrorptr *bool
+		if mirror {
+			mirrorptr = pointer.Bool(true)
+		} else if nomirror {
+			mirrorptr = pointer.Bool(false)
+		}
+
 		ins, err := c.Flags().GetBool("insecure-source")
 		if err != nil {
 			return err
+		}
+
+		noins, err := c.Flags().GetBool("no-insecure-source")
+		if err != nil {
+			return err
+		}
+
+		if noins && ins {
+			return fmt.Errorf("--no-insecure-source and --insecure-source conflict")
+		}
+
+		var insptr *bool
+		if ins {
+			insptr = pointer.Bool(true)
+		} else if noins {
+			insptr = pointer.Bool(false)
 		}
 
 		tisvc, err := createImageImportService()
@@ -73,8 +110,8 @@ var imageimport = &cobra.Command{
 			Namespace: ns,
 			Image:     args[0],
 			Source:    source,
-			Mirror:    &mirror,
-			Insecure:  &ins,
+			Mirror:    mirrorptr,
+			Insecure:  insptr,
 		}
 
 		ti, err := tisvc.NewImport(ctx, opts)
