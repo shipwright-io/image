@@ -75,7 +75,7 @@ func (t *ImageIO) Push(ctx context.Context, ns, name string, fpath string) error
 		metrics.PushSuccesses.Inc()
 	}()
 
-	istore, err := t.syssvc.GetRegistryStore(ctx)
+	istore, err := t.syssvc.RegistryStore(ctx, ns)
 	if err != nil {
 		return fmt.Errorf("error creating image store: %w", err)
 	}
@@ -93,7 +93,11 @@ func (t *ImageIO) Push(ctx context.Context, ns, name string, fpath string) error
 		return fmt.Errorf("error loading image into registry: %w", err)
 	}
 
-	regctx := t.syssvc.MirrorRegistryContext(ctx)
+	regctx, err := t.syssvc.MirrorRegistryContext(ctx, ns)
+	if err != nil {
+		return fmt.Errorf("unable to read mirror config: %w", err)
+	}
+
 	insecure := regctx.DockerInsecureSkipTLSVerify == types.OptionalBoolTrue
 
 	opts := ImportOpts{
@@ -136,7 +140,7 @@ func (t *ImageIO) Pull(ctx context.Context, ns, name string) (*os.File, func(), 
 		return nil, nil, fmt.Errorf("error getting image: %w", err)
 	}
 
-	istore, err := t.syssvc.GetRegistryStore(ctx)
+	istore, err := t.syssvc.RegistryStore(ctx, ns)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating image store: %w", err)
 	}

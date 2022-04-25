@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mirror-registry-config
+data:
+  address: cmVnaXN0cnkubWlycm9yLXJlZ2lzdHJ5LnN2Yzo1MDAw
+  insecure: dHJ1ZQ==

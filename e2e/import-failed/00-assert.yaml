@@ -6,5 +6,7 @@ spec:
   source: a.b.c.d/test/123:latest
   mirror: false
 status:
-  importAttempts:
-    - succeed: false
+  conditions:
+  - type: Imported
+    status: "False"
+    reason: Progressing

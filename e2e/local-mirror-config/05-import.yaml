@@ -1,0 +1,8 @@
+apiVersion: shipwright.io/v1beta1
+kind: ImageImport
+metadata:
+  name: alpine-mirror
+spec:
+  image: alpine-mirror
+  source: docker.io/library/alpine:latest
+  mirror: true

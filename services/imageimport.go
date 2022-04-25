@@ -293,7 +293,7 @@ func (t *ImageImport) Import(
 		}
 
 		if mirror := pointer.BoolDeref(ii.Spec.Mirror, false); mirror {
-			istore, err := t.syssvc.GetRegistryStore(ctx)
+			istore, err := t.syssvc.RegistryStore(ctx, ii.Namespace)
 			if err != nil {
 				return nil, fmt.Errorf("unable to get image store: %w", err)
 			}
