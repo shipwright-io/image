@@ -77,7 +77,7 @@ func (i *Registry) Load(
 
 	tostr := fmt.Sprintf("docker://%s/%s/%s", i.regaddr, ns, name)
 	if len(i.repository) > 0 {
-		tostr = fmt.Sprintf("docker://%s/%s/%s-%s", i.regaddr, i.repository, ns, name)
+		tostr = fmt.Sprintf("docker://%s/%s/%s", i.regaddr, i.repository, name)
 	}
 
 	toref, err := alltransports.ParseImageName(tostr)

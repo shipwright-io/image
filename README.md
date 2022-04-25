@@ -223,11 +223,14 @@ As for `.status.importAttempts` the following is valid:
 
 If mirroring is set in an Image Shipwright Images will mirror the image content into another
 registry provided by the user.  To mirror images locally one needs to inform Shipwright Images
-about the mirror registry location. There are two ways of doing so, the first one is by following
-a Kubernetes enhancement proposal laid down [here](https://bit.ly/3rxCRqH). This enhancement
-proposal still does not cover things such as authentication thus should not be used in production.
-Shipwright Images can also be informed of the mirror registry location through a Secret called
-`mirror-registry-config`, this secret may contain the following properties:
+about the mirror registry location. There are two ways of doing so, the first one is by setting
+a global mirror registry (to be used by all namespaces) and the second is to define a local mirror
+registry in a per namespace basis. Local mirror configuration takes precedence over global mirror
+configurations.
+
+To configure a global mirror registry you have to create a Secret called `mirror-registry-config`
+inside the namespace where the operator is running. This secret may contain the following
+properties:
 
 | Name       | Description                                                                                  |
 | -----------| -------------------------------------------------------------------------------------------- |
@@ -236,18 +239,20 @@ Shipwright Images can also be informed of the mirror registry location through a
 | password   | The password to be used by Shipwright Images                                                 |
 | token      | The auth token to be used by Shipwright Images (optional)                                    |
 | insecure   | Allows Shipwright Images to access insecure registry if set to "true" (string)               |
-| repository | If set Shipwright Images will mirror all images inside the same Registry repository          |
+| repository | If set Shipwright Images will mirror all images inside this Registry repository (optional)   |
 
-Important to notice that, by default, Shipwright Images will create one repository per namespace
-so the user has to have enough permissiosn to do such an operator (create new repositories and
-push images to them). In other words: by default images are mirrored at
-`mirror.registry.io/namespace/imagename` inside the registry.
+If you prefer you can also create a secret with the same name (`mirror-registry-config`) in a
+given namespace. All image imports taking place in that namespace will then be mirrored in the
+defined registry. If neither local nor global mirror config is present the mirror process will
+fail.
 
-If your user doesn't have such permissions you can set up the `repository` property in the config,
-by doing so all images are going to be mirrored inside the provided `repository`, in other words
-images will be mirrored at `mirror.registry.io/repository/namespace-imagename`.
+The property `repository` may be set if all images should be mirrored inside the same repository
+in the registry. Be aware that if you set the `repository` config for the global mirror config
+then all images in the cluster will be mirrored inside the same repository possibly leading to
+naming collisions as multiples Images with the same name can exist in different namespaces. If
+`repository` is not present Shipwright Images will use the `namespace` as registry's `repository`.
 
-Follow below an example of a `mirror-registry-config` Secret:
+Follow below an example of a global `mirror-registry-config` Secret:
 
 ```yaml
 apiVersion: v1
@@ -260,6 +265,26 @@ data:
   username: YWRtaW4=
   password: d2hhdCB3ZXJlIHlvdSB0aGlua2luZz8K
 ```
+
+This sets up a global mirror registry, all images import requests will result in images being
+mirrored inside the same registry, they will be indexed by `namespace` as no `repository` has
+been set. Another example would be:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mirror-registry-config
+  namespace: mynamespace
+data:
+  address: bXktbG9jYWwtcmVnaXN0cnkuaW8=
+  username: YWRtaW4=
+  password: d2hhdCB3ZXJlIHlvdSB0aGlua2luZz8K
+```
+
+The difference here is that this Secret lives in a different namespace therefore it is only used
+for mirror operations happening on that namespace (`mynamespace` on this case). Again, if no
+`repository` has been provided the `namespace` is used as the registry repository.
 
 #### Importing images from private registries
 
