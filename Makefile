@@ -3,6 +3,10 @@ PLUGIN = kubectl-image
 PLUGIN_DARWIN = kubectl-image-darwin
 
 VERSION ?= v0.0.0
+HELM_VERSION ?= 3.8.2
+
+SYS_OS ?= $(shell uname | tr A-Z a-z)
+SYS_ARCH ?= amd64
 
 REGISTRY_HOSTNAME ?= ghcr.io
 REGISTRY_USERNAME ?= shipwright-io
@@ -14,6 +18,7 @@ IMAGE ?= $(REGISTRY_HOSTNAME)/$(REGISTRY_USERNAME)/$(IMGCTRL)
 OUTPUT_DIR ?= output
 OUTPUT_BIN = $(OUTPUT_DIR)/bin
 OUTPUT_DOC = $(OUTPUT_DIR)/doc
+OUTPUT_YAML ?= image-controller
 
 IMGCTRL_BIN = $(OUTPUT_BIN)/$(IMGCTRL)
 PLUGIN_BIN = $(OUTPUT_BIN)/$(PLUGIN)
@@ -123,6 +128,22 @@ registry-login:
 # build and push the container image with ko.
 build-image:
 	ko publish --base-import-paths --tags="${IMAGE_TAG}" ./cmd/$(IMGCTRL) 
+
+# downloads and unpacks helm binary in output directory
+get-helm:
+	mkdir -p $(OUTPUT_DIR)
+	curl -o $(OUTPUT_DIR)/helm.tar.gz \
+		https://get.helm.sh/helm-v$(HELM_VERSION)-$(SYS_OS)-$(SYS_ARCH).tar.gz
+	tar -xf $(OUTPUT_DIR)/helm.tar.gz -C $(OUTPUT_DIR)
+	rm $(OUTPUT_DIR)/helm.tar.gz
+
+# creates a yaml template of image-controller
+template:
+	mkdir -p $(OUTPUT_DIR)
+	$(OUTPUT_DIR)/$(SYS_OS)-$(SYS_ARCH)/helm template \
+		--namespace="$(NAMESPACE)" \
+		--set="image=$(IMAGE)" \
+		./chart > $(OUTPUT_DIR)/$(OUTPUT_YAML).yaml
 
 # installs the helm rendered resources against the infomred namespace. 
 install:
