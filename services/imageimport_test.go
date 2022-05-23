@@ -124,6 +124,14 @@ func TestImageImportSync(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "default",
 					Name:      "new-img",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       imgv1b1.ImageKind,
+							APIVersion: imgv1b1.GroupVersion,
+							Name:       "new-img",
+							UID:        "an-uid",
+						},
+					},
 				},
 				Spec: imgv1b1.ImageImportSpec{
 					Image:  "new-img",
@@ -135,6 +143,14 @@ func TestImageImportSync(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "default",
 						Name:      "new-img",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								Kind:       imgv1b1.ImageKind,
+								APIVersion: imgv1b1.GroupVersion,
+								Name:       "new-img",
+								UID:        "an-uid",
+							},
+						},
 					},
 					Spec: imgv1b1.ImageImportSpec{
 						Image:  "new-img",
@@ -145,6 +161,7 @@ func TestImageImportSync(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "default",
 						Name:      "new-img",
+						UID:       "an-uid",
 					},
 					Spec: imgv1b1.ImageSpec{
 						Source: "centos:latest",
@@ -159,6 +176,14 @@ func TestImageImportSync(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "default",
 					Name:      "new-img",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       imgv1b1.ImageKind,
+							APIVersion: imgv1b1.GroupVersion,
+							Name:       "new-img",
+							UID:        "an-uid",
+						},
+					},
 				},
 				Spec: imgv1b1.ImageImportSpec{
 					Image: "new-img",
@@ -169,6 +194,14 @@ func TestImageImportSync(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "default",
 						Name:      "new-img",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								Kind:       imgv1b1.ImageKind,
+								APIVersion: imgv1b1.GroupVersion,
+								Name:       "new-img",
+								UID:        "an-uid",
+							},
+						},
 					},
 					Spec: imgv1b1.ImageImportSpec{
 						Image: "new-img",
@@ -178,6 +211,7 @@ func TestImageImportSync(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "default",
 						Name:      "new-img",
+						UID:       "an-uid",
 					},
 					Spec: imgv1b1.ImageSpec{
 						Source: "centos:latest",
@@ -193,6 +227,14 @@ func TestImageImportSync(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "default",
 					Name:      "new-img",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       imgv1b1.ImageKind,
+							APIVersion: imgv1b1.GroupVersion,
+							Name:       "new-img",
+							UID:        "an-uid",
+						},
+					},
 				},
 				Spec: imgv1b1.ImageImportSpec{
 					Image:  "new-img",
@@ -204,6 +246,14 @@ func TestImageImportSync(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "default",
 						Name:      "new-img",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								Kind:       imgv1b1.ImageKind,
+								APIVersion: imgv1b1.GroupVersion,
+								Name:       "new-img",
+								UID:        "an-uid",
+							},
+						},
 					},
 					Spec: imgv1b1.ImageImportSpec{
 						Image:  "new-img",
@@ -214,6 +264,7 @@ func TestImageImportSync(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "default",
 						Name:      "new-img",
+						UID:       "an-uid",
 					},
 					Spec: imgv1b1.ImageSpec{
 						Source: "centos:latest",
