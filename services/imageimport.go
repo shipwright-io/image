@@ -209,14 +209,18 @@ func (t *ImageImport) Sync(ctx context.Context, ii *imgv1b1.ImageImport) error {
 		klog.Infof("new image %s/%s created", img.Namespace, img.Name)
 	}
 
+	// if the image import is not owned by the image we set it here. On this case we return
+	// immediately after updating the image import object. During the next reconcile cycle
+	// the owner reference will be set then we can move on with the import.
 	if !ii.OwnedByImage(img) {
 		ii.SetOwnerImage(img)
-		if ii, err = t.imgcli.ShipwrightV1beta1().ImageImports(ii.Namespace).Update(
+		if _, err = t.imgcli.ShipwrightV1beta1().ImageImports(ii.Namespace).Update(
 			ctx, ii, metav1.UpdateOptions{},
 		); err != nil {
 			klog.Errorf("error setting image import owner: %s", err)
 			return fmt.Errorf("error processing image import: %w", err)
 		}
+		return nil
 	}
 
 	// make sure we inherited values from the target Image object. This essentially means
