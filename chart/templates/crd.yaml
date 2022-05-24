@@ -50,12 +50,23 @@ spec:
             properties:
               image:
                 type: string
+                description: An ImageImport object is a request to import an Image object.
+                  The Image object name is specified here and lives in the same namespace
+                  as the ImageImport object.
               source:
                 type: string
+                description: This property allows users to override the source registry for
+                  the import. Users can specify here a different image to be imported with
+                  its fully address (e.g. docker.io/library/centos:latest).
               mirror:
                 type: boolean
+                description: Indicates if the image should be mirrored or not. This property
+                  overrides the same property in the Image object thus allowing a temporary
+                  change in behavior.
               insecure:
                 type: boolean
+                description: Indicates if the operator can skip TLS verification when
+                  importing the remote image (i.e. allows insecure source registry).
           status:
             type: object
             properties:
@@ -129,19 +140,28 @@ spec:
                     when:
                       type: string
                       nullable: true
+                      description: When the import attempt happen, date and time.
                     succeed:
                       type: boolean
+                      description: If the import suceeded this is true, it is false otherwise.
                     reason:
                       type: string
+                      description: The reason for the failure. Most likely will contain the
+                        error string returned during the import attempt.
               hashReference:
                 type: object
                 properties:
                   source:
                     type: string
+                    description: Holds the source of the import (from where the image was
+                      imported).
                   importedAt:
                     type: string
+                    description: Date and time of the import.
                   imageReference:
                     type: string
+                    description: The actual image reference, pointing to the current SHA
+                      of the manifest found during the import.
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -186,10 +206,15 @@ spec:
             properties:
               source:
                 type: string
+                description: The image path from where the import will fetch the image, e.g.
+                  docker.io/library/centos:latest
               mirror:
                 type: boolean
+                description: True if the image should be mirrored to an external registry.
               insecure:
                 type: boolean
+                description: True if the operator can skip TLS verification when reading the
+                  remote image.
           status:
             type: object
             properties:
@@ -201,7 +226,12 @@ spec:
                   properties:
                     source:
                       type: string
+                      description: Holds the source of the import (from where the image was
+                        imported).
                     importedAt:
                       type: string
+                      description: Date and time of the import.
                     imageReference:
                       type: string
+                      description: The actual image reference, pointing to the current SHA
+                        of the manifest found during the import.
