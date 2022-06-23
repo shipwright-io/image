@@ -13,16 +13,9 @@ IMAGE ?= $(REGISTRY_HOSTNAME)/$(REGISTRY_USERNAME)/$(IMGCTRL)
 
 OUTPUT_DIR ?= output
 OUTPUT_BIN = $(OUTPUT_DIR)/bin
-OUTPUT_DOC = $(OUTPUT_DIR)/doc
 
 IMGCTRL_BIN = $(OUTPUT_BIN)/$(IMGCTRL)
 PLUGIN_BIN = $(OUTPUT_BIN)/$(PLUGIN)
-GEN_BIN = $(OUTPUT_DIR)/code-generator
-KUTTL_BIN = $(OUTPUT_DIR)/kuttl
-KUTTL_REPO = https://github.com/kudobuilder/kuttl
-
-PROJECT = github.com/shipwright-io/image
-GEN_OUTPUT = /tmp/$(PROJECT)/infra/images
 
 # destination namespace to install target
 NAMESPACE ?= shipwright-build
@@ -38,69 +31,72 @@ GOFLAGS ?= -v -mod=vendor -ldflags='-Xmain.Version=$(VERSION)'
 
 default: build
 
+# build target calls builds for the operator and for the kubectl plugin for the platform we
+# are running on plus Darwin amd64.
+.PHONY: build
 build: $(IMGCTRL) $(PLUGIN_DARWIN) $(PLUGIN)
 
 .PHONY: $(IMGCTRL)
 $(IMGCTRL):
-	go build \
-		-o $(IMGCTRL_BIN) \
-		./cmd/$(IMGCTRL)
+	go build -o $(IMGCTRL_BIN) ./cmd/$(IMGCTRL)
 
 .PHONY: $(PLUGIN)
 $(PLUGIN):
-	go build \
-		-o $(PLUGIN_BIN) \
-		./cmd/$(PLUGIN)
+	go build -o $(PLUGIN_BIN) ./cmd/$(PLUGIN)
 
 .PHONY: $(PLUGIN_DARWIN)
 $(PLUGIN_DARWIN):
-	GOOS=darwin GOARCH=amd64 go build \
-		-tags containers_image_openpgp \
-		-o $(PLUGIN_BIN) \
-		./cmd/$(PLUGIN)
+	GOOS=darwin GOARCH=amd64 \
+	     go build -tags containers_image_openpgp -o $(PLUGIN_BIN) ./cmd/$(PLUGIN)
+
+# get target download a bunch of binaries that are necessary while developing. Things like
+# binaries to generate code, generate crds and run our e2e tests are installed when this
+# target is called.
+.PHONY: get
+get: get-code-generator get-kuttl get-controller-gen get-proto
+
+# this target generates the protobuf, the kubernetes clients code and the necessary CRDs as
+# yaml files. The latter are installed under chart/templates directory.
+.PHONY: generate
+generate: generate-proto generate-k8s generate-manifests
 
 .PHONY: get-code-generator
 get-code-generator:
-	rm -rf $(GEN_BIN) || true
-	git clone --depth=1 \
-		--branch v0.22.0 \
-		https://github.com/kubernetes/code-generator.git \
-		$(GEN_BIN)
+	./hack/get-code-generator.sh
+
+.PHONY: get-controller-gen
+get-controller-gen:
+	./hack/get-controller-gen.sh
 
 .PHONY: get-kuttl
 get-kuttl:
-	rm -rf $(KUTTL_BIN) || true
-	mkdir -p $(OUTPUT_DIR) || true
-	curl -o $(KUTTL_BIN) -L \
-		$(KUTTL_REPO)/releases/download/v0.11.1/kubectl-kuttl_0.11.1_linux_x86_64
-	chmod 755 $(KUTTL_BIN)
+	./hack/get-kuttl.sh
+
+.PHONY: get-proto
+get-proto:
+	./hack/get-proto.sh
 
 .PHONY: e2e
 e2e:
-	$(KUTTL_BIN) test --timeout=180 e2e
+	output/kuttl/kuttl test --timeout=180 e2e
 
 .PHONY: generate-proto
 generate-proto:
-	protoc --go-grpc_out=paths=source_relative:. \
+	output/protoc/protoc --go-grpc_out=paths=source_relative:. \
 		--go_out=paths=source_relative:. \
 		./infra/pb/*.proto
 
 .PHONY: generate-k8s
 generate-k8s:
-	set -x
-	rm -rf $(GEN_OUTPUT) || true
-	$(GEN_BIN)/generate-groups.sh all \
-		$(PROJECT)/infra/images/v1beta1/gen \
-		$(PROJECT) \
-		infra/images:v1beta1 \
-		--go-header-file=$(GEN_BIN)/hack/boilerplate.go.txt \
-		--output-base=/tmp
-	rm -rf infra/images/v1beta1/gen
-	mv $(GEN_OUTPUT)/v1beta1/* infra/images/v1beta1/
+	./hack/generate-k8s.sh
+
+.PHONY: generate-manifests
+generate-manifests:
+	./hack/generate-manifests.sh
 
 .PHONY: image
 image:
-	$(IMAGE_BUILDER) build -f Containerfile -t $(IMAGE) .
+	$(IMAGE_BUILDER) build --build-arg version=$(VERSION) -f Containerfile -t $(IMAGE) .
 
 .PHONY: clean
 clean:
@@ -108,14 +104,11 @@ clean:
 
 .PHONY: pdf
 pdf:
-	mkdir -p $(OUTPUT_DOC)
-	cat README.md | pandoc \
-		-fmarkdown-implicit_figures \
-		-V geometry:margin=1in \
-		-o $(OUTPUT_DOC)/README.pdf
+	./hack/generate-pdf.sh
 
-# using the environment variable directly to login against the container registry, while the username
-# and container registry hostname are regular Makefile variables, please, overwrite them as needed.
+# using the environment variable directly to login against the container registry, while the
+# username and container registry hostname are regular Makefile variables, please, overwrite
+# them as needed.
 registry-login:
 	echo "$$GITHUB_TOKEN" | \
 		ko login "$(REGISTRY_HOSTNAME)" --username=$(REGISTRY_USERNAME) --password-stdin
@@ -124,7 +117,7 @@ registry-login:
 build-image:
 	ko publish --base-import-paths --tags="${IMAGE_TAG}" ./cmd/$(IMGCTRL) 
 
-# installs the helm rendered resources against the infomred namespace. 
+# installs the helm rendered resources against the infomred namespace.
 install:
 	helm template \
 		--namespace="$(NAMESPACE)" \
