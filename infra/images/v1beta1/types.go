@@ -55,6 +55,11 @@ var (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Image is a map between an internal kubernetes image tag and multiple remote hosted images.
+// +kubebuilder:resource:shortName=img
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Mirror",type=boolean,JSONPath=`.spec.mirror`
+// +kubebuilder:printcolumn:name="Insecure",type=boolean,JSONPath=`.spec.insecure`
+// +kubebuilder:printcolumn:name="Source",type=string,JSONPath=`.spec.source`
 type Image struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -172,29 +177,41 @@ func (t *Image) CurrentReferenceForImage() string {
 
 // ImageSpec represents the user intention with regards to importing remote images.
 type ImageSpec struct {
-	Source   string `json:"source"`
-	Mirror   bool   `json:"mirror"`
-	Insecure bool   `json:"insecure"`
+	// Source indicates the registry from where this image is imported by default.
+	Source string `json:"source"`
+	// Mirror indicates if a mirror operation should take place when importing this image.
+	Mirror bool `json:"mirror"`
+	// Insecure indicates that invalid certificates should be ignored during the image
+	// import operation.
+	Insecure bool `json:"insecure"`
 }
 
 // ImageStatus is the current status for an Image.
 type ImageStatus struct {
+	// HashReferences holds a list of all images "versions" already imported.
 	HashReferences []HashReference `json:"hashReferences,omitempty"`
 }
 
 // ImportAttempt holds data about an import cycle. Keeps track if it was successful, when it
 // happened and if not successful what was the error reported (reason).
 type ImportAttempt struct {
-	When    metav1.Time `json:"when"`
-	Succeed bool        `json:"succeed"`
-	Reason  string      `json:"reason,omitempty"`
+	// When holds the date and time of the import attempt failure or success.
+	When metav1.Time `json:"when"`
+	// Succeed indicates if the attempt was sucessful or not.
+	Succeed bool `json:"succeed"`
+	// Reason holds the error if the attempt failed. Empty if the attempt succeeded.
+	Reason string `json:"reason,omitempty"`
 }
 
 // HashReference is an reference to an imported Image (by its sha).
 type HashReference struct {
-	Source         string      `json:"source"`
-	ImportedAt     metav1.Time `json:"importedAt"`
-	ImageReference string      `json:"imageReference,omitempty"`
+	// Source indicates from where the image was imported.
+	Source string `json:"source"`
+	// ImportedAt holds the date and time the import has finished.
+	ImportedAt metav1.Time `json:"importedAt"`
+	// ImageReference holds the image reference (by hash) obtained during the import.
+	// This fields holds the actual result of the import process.
+	ImageReference string `json:"imageReference,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -213,6 +230,12 @@ type ImageList struct {
 
 // ImageImport represents a request, made by the user, to import a Image from a remote repository
 // and into an Image object.
+// +kubebuilder:resource:shortName=ii
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Target Image",type=string,JSONPath=`.spec.image`
+// +kubebuilder:printcolumn:name="Insecure",type=boolean,JSONPath=`.spec.insecure`
+// +kubebuilder:printcolumn:name="Mirror",type=boolean,JSONPath=`.spec.mirror`
+// +kubebuilder:printcolumn:name="Imported At",type=string,JSONPath=`.status.hashReference.importedAt`
 type ImageImport struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -372,17 +395,25 @@ func (t *ImageImport) RegisterImportSuccess() {
 // a remote location. Values not set in here are read from the Image, e.g.  if no "mirror" is set
 // here but it is set in the image we use it.
 type ImageImportSpec struct {
-	Image    string `json:"image"`
-	Source   string `json:"source"`
-	Mirror   *bool  `json:"mirror,omitempty"`
-	Insecure *bool  `json:"insecure,omitempty"`
+	// Image points the name of the target image for an image import.
+	Image string `json:"image"`
+	// Source is a reference from where to import the image, this property overrides the
+	// default Source defined in the Image object.
+	Source string `json:"source"`
+	// Mirror, when set, overrides the default Mirror property set in the target image.
+	Mirror *bool `json:"mirror,omitempty"`
+	// Insecure, when set, overrides the default Insecure property set in the target image.
+	Insecure *bool `json:"insecure,omitempty"`
 }
 
 // ImageImportStatus holds the current status for an image tag import attempt.
 type ImageImportStatus struct {
-	Conditions     []metav1.Condition `json:"conditions"`
-	ImportAttempts []ImportAttempt    `json:"importAttempts"`
-	HashReference  *HashReference     `json:"hashReference,omitempty"`
+	// Conditions holds a list of conditions that represent the current state of the resource.
+	Conditions []metav1.Condition `json:"conditions"`
+	// ImportAttempts holds a list of all import attempts executed, failures and successes.
+	ImportAttempts []ImportAttempt `json:"importAttempts"`
+	// HashReference is populated with the actual image reference once the import succeeds.
+	HashReference *HashReference `json:"hashReference,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
