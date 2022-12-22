@@ -379,8 +379,8 @@ make kubectl-image
 sudo mv output/bin/kubectl-image /usr/local/bin/kubectl-image
 ```
 
-You gonna need `go` to be at least version `1.16`. To build in an Ubuntu distribution, after
-installing `go >= 1.16`, you can run the following commands:
+You gonna need `go` to be at least version `1.19`. To build in an Ubuntu distribution, after
+installing `go >= 1.19`, you can run the following commands:
 
 ```
 sudo apt install -y \
