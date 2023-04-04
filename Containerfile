@@ -2,7 +2,7 @@
 # Builder
 #
 
-FROM docker.io/fedora:34 AS builder
+FROM docker.io/fedora:37 AS builder
 RUN dnf install -y \
     btrfs-progs-devel \
     device-mapper-devel \
@@ -19,7 +19,7 @@ RUN make kubectl-image
 #
 # Application
 #
-FROM docker.io/fedora:34
+FROM docker.io/fedora:37
 RUN dnf install -y device-mapper-libs
 COPY --from=builder /src/output/bin/imgctrl /usr/local/bin/imgctrl
 COPY --from=builder /src/output/bin/kubectl-image /usr/local/bin/kubectl-image
