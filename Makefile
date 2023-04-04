@@ -32,7 +32,7 @@ NAMESPACE ?= shipwright-build
 KO_DOCKER_REPO ?= $(REGISTRY_HOSTNAME)/$(REGISTRY_USERNAME)
 
 # golang flags are exported through the enviroment variables, reaching all targets
-GOFLAGS ?= -v -mod=vendor -ldflags='-Xmain.Version=$(VERSION)'
+GOFLAGS ?= -v -mod=vendor -ldflags=-X=main.Version=$(VERSION)
 
 .EXPORT_ALL_VARIABLES:
 
