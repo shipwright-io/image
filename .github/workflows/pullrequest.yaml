@@ -1,13 +1,8 @@
-# for pull request the actions context is a little bit different. we always use the workflow as
-# defined in the main branch, therefore any change in .github/workflow directory introduced by
-# the PR is ignored. this happens because if leverage the "on: pull_request_target" instead of
-# "on: pull_request". the only practical difference here is that when we checkout the source
-# code we use the source repository (the repo used to open the pr), see "check out code" steps.
 ---
 name: pullrequest
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - main
 
@@ -94,7 +89,7 @@ jobs:
       uses: docker/login-action@v1
       with:
         registry: ghcr.io
-        username: shipwright-io
+        username: ${{ github.event.pull_request.user.login }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: build image
@@ -104,7 +99,7 @@ jobs:
         push: true
         context: ./
         file: ./Containerfile
-        tags: ghcr.io/shipwright-io/imgctrl:pr-${{ github.event.number }}
+        tags: ghcr.io/${{ github.event.pull_request.user.login }}/imgctrl:pr-${{ github.event.number }}
 
   release:
     name: release
